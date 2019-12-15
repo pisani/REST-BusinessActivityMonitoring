@@ -1,7 +1,7 @@
 Class zaux.rBAM.Utils Extends %RegisteredObject
 {
 
-ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData, Output json As %DynamicObject) As %Status
+ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,OmmitClassName=1, %ignoreArrList, Output json As %DynamicObject) As %Status
 {
 	kill json
 	set tSC=$$$OK 
@@ -13,16 +13,21 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData, O
 	set tMetricClassName=""
 	set TimeStamp=metricData 
 	
+	zw %ignoreArrList
+	
 	try { 
+		set data={}
+		set data."_Production"=production
+		set data."_SampledDateTime"=TimeStamp
+	
 		if StructuredOutput=0 {
-			set data={}
-			set data."_SampledDateTime"=TimeStamp
-			set data."_Production"=production
 			set del=DelimeterForFlattenedData
 		}
-		
+				
 		for  {
+			kill pProperties,ins
 			set tMetricClassName=$order(metricData(tMetricClassName)) quit:tMetricClassName=""		
+		
 			// Get Metric Instances.
 			do $CLASSMETHOD(tMetricClassName,"GetInstances",.ins)
 			
@@ -38,13 +43,18 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData, O
 						
 			set i="",p="" 
 			if StructuredOutput=0 {				
+				set attMetric=tMetricClassName_del if OmmitClassName set attMetric=""
 				for  {
 					set i=$order(ins(i)) quit:i=""  
+					continue:..ignore("*",ins(i))
+					continue:..ignore(tMetricClassName,ins(i))
+					
 					for  {
 						set p=$order(pProperties(p)) quit:p=""  
-						
+						continue:..ignore(tMetricClassName,ins(i),pProperties(p))
+											
 						if $d(metricData(tMetricClassName,ins(i),pProperties(p)))=1{
-							do data.%Set(tMetricClassName_del_$select(flgMultiInstance:(ins(i)_del),1:"")_pProperties(p),metricData(tMetricClassName,ins(i),pProperties(p)))
+							do data.%Set(attMetric_$select(flgMultiInstance:(ins(i)_del),1:"")_pProperties(p),metricData(tMetricClassName,ins(i),pProperties(p)))
 						} 
 						
 						// sub nodes ?
@@ -52,7 +62,7 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData, O
 							set sn=""
 							for  {
 								set sn=$order(metricData(tMetricClassName,ins(i),pProperties(p),sn)) quit:sn="" 
-								do data.%Set(tMetricClassName_del_$select(flgMultiInstance:(ins(i)_del),1:"")_pProperties(p)_del_sn,metricData(tMetricClassName,ins(i),pProperties(p),sn))
+								do data.%Set(attMetric_$select(flgMultiInstance:(ins(i)_del),1:"")_pProperties(p)_del_sn,metricData(tMetricClassName,ins(i),pProperties(p),sn))
 							}
 						}
 					}
@@ -61,32 +71,35 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData, O
 			} else {
 				 
 				set data={}
-				set data."_Production"=production
-	 			set data."_MetricClassName"=tMetricClassName
-				set data."_SampledDateTime"=TimeStamp 
+				set data."_MetricClassName"=tMetricClassName
 				
 				if flgMultiInstance {
-					set data.instances=[]
+					set data.instance=[]
 				}
 				
+				set i=""
 				for  { 
 					set instance={}
-					set i=$order(ins(i)) quit:i="" 
+					set i=$order(ins(i)) quit:i=""
+					continue:..ignore("*",ins(i)) 
+					continue:..ignore(tMetricClassName,ins(i))
+					
 					if flgMultiInstance {
 						set instance.instanceName=ins(i)
 					}
 					
-					set metrics=[]
-					for  {
+					set metrics=[],p=""
+					for  { 
 						set metric={}
 						set p=$order(pProperties(p)) quit:p="" 
+						continue:..ignore(tMetricClassName,ins(i),pProperties(p))
 						
 						if $d(metricData(tMetricClassName,ins(i),pProperties(p)))=1 {
 							do metric.%Set(pProperties(p),metricData(tMetricClassName,ins(i),pProperties(p)))
 						}
 						// sub nodes ?
-						if $DATA(metricData(ins(i),pProperties(p)))>9 {
-							// 
+						if $DATA(metricData(tMetricClassName,ins(i),pProperties(p)))>9 {
+							//
 							set sn="",subnodes=[]
 							for  {
 								set subnode={}
@@ -102,23 +115,19 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData, O
 					}
 					set instance.metrics=metrics
 					if flgMultiInstance {
-						do data.instances.%Push(instance)			
+						do data.instance.%Push(instance)			
 					} else {
 						set data.instance=instance
 					}
-				
 				}
-				
 				do json.%Push(data)
 			}
-		
 		}
 		
 		if 'StructuredOutput do json.%Push(data)
 		
 	} catch ex {
 		set tSC=ex.AsStatus() 
-		
 	}
 	
 	quit tSC
@@ -146,4 +155,12 @@ ClassMethod getPropertiesForDataSource(pDataSource As %String, Output pPropertie
 	Quit tSC
 }
 
+ClassMethod ignore(class="*",instance="*",property="*") as %Boolean {
+	
+	quit:$d(%ignoreArrList("*","*",property)) 1
+	quit:$d(%ignoreArrList("*",instance,property)) 1
+	quit:$d(%ignoreArrList(class,instance,property)) 1
+	
+	quit 0
+	}
 }

@@ -1,3 +1,9 @@
+/// TODO:
+/// 3. Create a zaux.bs.SampleMetrics class good for the Quickstart Interoperability solution.
+/// 4. Create API as %zaux.rBAM.API for CACHELIB install. Document appropriatly
+/// 
+/// 98. Make github repository public !
+/// 99. Complete Documentation and Post !
 /// This Business Operation sends, over HTTP using REST (POST) the values of one or more Business Metric classes.
 /// set to run in this production.
 /// 
@@ -6,13 +12,81 @@ Class zaux.rBAM.Operation Extends (EnsLib.REST.Operation, zaux.rBAM.Utils) [ Lan
 
 Parameter INVOCATION = "Queue";
 
-Parameter SETTINGS = "CallInterval:REST Output,StructuredOutput:REST Output,SkipEmptyJSON:REST Output,BusinessMetricsNames:REST Output:selector?multiSelect=1&context={Ens.ContextSearch/SubclassOf?class=Ens.BusinessMetric}";
+Parameter SETTINGS = "CallInterval:REST Output,StructuredOutput:REST Output,SkipEmptyJSON:REST Output,BusinessMetricsNames:REST Output:selector?multiSelect=1&context={Ens.ContextSearch/SubclassOf?class=Ens.BusinessMetric},ClassNamePrefix:REST Output,IgnoreMetrics:REST Output";
 
-/// Identy this productions BusinessMetrics that will be interrogated for their most recent metric values
+/// Identify this productions BusinessMetrics that will be interrogated for their most recent metric values
 Property BusinessMetricsNames As %String(MAXLEN = 1000) [ MultiDimensional ];
 
-/// Set to FALSE if the JSON body of data is to be flattened into a single list of JSON elements, regardless of BusinessMetric name, Instance, or Metric property
-/// If false, the JSON bodyy will be structured with a collection of Business Metrics, that wraps a collection of Instances, and then Metrics in a more structured format.
+/// This applies to No-Structured JSON ouput. FALSE by default
+/// <br>
+/// If TRUE omit the classname from the JSON attribute name
+/// Note - if collecting metrics from multiple business services, and there are common metric names, then, these will be
+/// repeated, and the target will not be able to differentiate. 
+/// This setting applies when only one BusinessMetric class is used, or when metric names are unique across multiple BusinessMetric Classes 
+Property ClassNamePrefix as %Boolean [InitialExpression =0];
+
+/// Comma separated list of Business Metric Property names to avoid from all output.<br/> 
+/// May also specify containing BusinessMetric Class name </br>
+/// Format:  [BusinessComponentName]:[Instance]:[MetricProperty],..
+/// 
+Property IgnoreMetrics as %String (MAXLEN=2500) [InitialExpression=""];
+
+Property intIgnoreArr as %String [MultiDimensional,Private];
+/*
+// EG:
+// (Default, as require by PowerBI) 
+// StructuredOutput = FALSE pushes a JSON body of data as follows:
+// [
+// {
+// 		"_Production" :"AAAAA555555",
+// 		"_SampledDateTime" :"AAAAA555555",
+// 		"zaux.bs.SampleMetrics_City" :"AAAAA555555",
+// 		"zaux.bs.SampleMetrics_Lat" :"AAAAA555555",
+// 		"zaux.bs.SampleMetrics_Long" :"AAAAA555555",
+// 		"zaux.bs.SampleMetrics_TwitterMentions" :"98.6"
+// 		"zaux.bs.SampleMetrics_HiLowTemp_Low" :"13"
+// 		"zaux.bs.SampleMetrics_HiLowTemp_High" :"26"
+// 		"zaux.bs.SampleMetrics_AirQuality_1" :"106"
+// 		"zaux.bs.SampleMetrics_AirQuality_2" :"102"
+// 		"zaux.bs.SampleMetrics_AirQuality_3" :"103"
+// 
+// 	}
+// ]
+// 
+// and with StructuredOutput = TRUE pushes a JSON body of data as follows:
+// [
+// {
+// 		"_Production" :"AAAAA555555",
+// 		"_SampledDateTime" :"AAAAA555555",
+// 		"_MetricClassName":"zaux.bs.SampleMetrics",
+// 		"instances": [
+// 						 	{"metrics" [
+// 								 {"City" :"AAAAA555555"},
+// 								 {"Lat" :"AAAAA555555"},
+// 								 {"Long" :"AAAAA555555"},
+// 								 {"TwitterMentions" :"98.6"}
+// 									 {"HiLowTemp":[
+// 												   {"key":"Low","value":"13"},
+// 												   {"key":"High","value":"26"}
+// 												  ]
+// 									 {"AirQuality":[
+// 												   {"key":"1","value":"106"},
+// 												   {"key":"2","value":"102"},
+// 												   {"key":"3","value":"103"},
+// 												  ]
+// 									 }
+// 								]
+// 						}
+// 						]	
+// 	}
+// ]
+// 
+// for BusinessMetrics with multiple instances, the element "instances" will include a json property "instanceName" (in the structured
+// output) and be part of the json property name in the non-structured output format.
+// 
+*/
+/// Set to FALSE if the JSON body of data is to be flattened into a single level of JSON properties, regardless of BusinessMetric name, Instance, or Metric property
+/// If false, the JSON body will be structured with a collection of Business Metrics, that wraps a collection of Instances, and then Metrics in a more structured format.
 Property StructuredOutput As %Boolean [ InitialExpression = 0 ];
 
 /// Time (in seconds) to wait before checking Metric values from the Business Metric classes defined
@@ -39,13 +113,22 @@ Method OnKeepalive(pAdapterStatus As %Status) As %Status
 			set MetricClass=$piece(..BusinessMetricsNames,",",i) 
 			continue:MetricClass=""
 			continue:'##class(Ens.Director).IsItemEnabled(MetricClass,.status)
-			
 			merge metricData(MetricClass)=$$$EnsMetrics(MetricClass)
 			
+			// ignore all metrics of given business class  ?
+			if $d(..intIgnoreArr(MetricClass,"*","*")) kill metricData(c)
+
+			// ignore all metrics of business class,instance combination
+			set inst=""
+			for  {
+				set inst=$order(metricData(MetricClass,inst)) quit:inst=""
+				if $d(..intIgnoreArr(MetricClass,inst,"*")) kill metricData(MetricClass,inst)
+			}
 		} 
 		
+		m intIgnoreArr=..intIgnoreArr
 		// Build JSON for measures
-		$$$THROWONERROR(tSC,..buildJSON(.metricData,..StructuredOutput,..DelimeterForFlattenedData,.json))
+		$$$THROWONERROR(tSC,..buildJSON(.metricData,..StructuredOutput,..DelimeterForFlattenedData,..ClassNamePrefix,.intIgnoreArr, .json))
 		  
 		;# Write JSON to foreground for now
 		if $d(json),$isObject(json) {
@@ -60,13 +143,14 @@ Method OnKeepalive(pAdapterStatus As %Status) As %Status
 			
 			; Call HTTP Post
   			if 'skip $$$THROWONERROR(tSC,..Adapter.Post(.tHttpResponse,,json.%ToJSON()))
+  			
   		}
 		
 	} catch ex {
 		set tSC=ex.AsStatus()
 	}
 	if $$$ISERR(tSC) {
-		if ..#DEBUG write !,$System.Status.DisplayError(tSC)
+		if ..#DEBUG write !,$System.Status.DisplayError(tSC) 
 		quit tSC
 	}
     
@@ -77,6 +161,19 @@ Method OnKeepalive(pAdapterStatus As %Status) As %Status
 Method OnInit() As %Status
 {
 	set ..Adapter.KeepaliveInterval=..CallInterval
+	
+	set ignores=..IgnoreMetrics
+	for x=1:1:$l(ignores,",") { 
+		set mic=$piece(ignores,",",x) continue:mic=""
+		set m=$p(mic,":",3),i=$p(mic,":",2),c=$p(mic,":",1)
+		
+ 		; setup ..intIgnoreArr() to be used later for purging metricData.
+		set:c="" c="*"
+		set:i="" i="*"
+		set:m="" m="*"
+		set ..intIgnoreArr(c,i,m)=""
+		
+	}	
 	Quit $$$OK
 }
 
