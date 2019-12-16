@@ -57,7 +57,11 @@ ClassMethod GetMetricClassData(namespace, metricClassName = "") As %Status
 	set metricData=$zdt($h,3)
 	try
 	{
-		do ..getParams(.StructuredOutput,.DelimeterForFlattenedData)
+		do ..getParams(.StructuredOutput,.DelimeterForFlattenedData,.OmmitClassName,.HideMetricsString)
+		if HideMetricsString'="" {
+			do ..buildHideArray(HideMetricsString,.intHideArr)
+		} 
+		
 		if metricClassName="" { 
 			do ..getProductionBusinessMetrics(.hostList,0)
 		} else {  
@@ -76,11 +80,22 @@ ClassMethod GetMetricClassData(namespace, metricClassName = "") As %Status
 			set c=$order(hostList(c)) quit:c=""
 			set metricClassName=hostList(c)
 
-			merge metricData(metricClassName)=$$$EnsMetrics(metricClassName)			
+			// specifically hide all metrics of given business class  ?
+			if $d(intHideArr(metricClassName,"*","*")) continue
+			
+			merge metricData(metricClassName)=$$$EnsMetrics(metricClassName)
+			 
+			// hide all metrics of business class+instance combination
+			set inst=""
+			for  {
+				set inst=$order(metricData(metricClassName,inst)) quit:inst=""
+				if $d(intHideArr(metricClassName,inst,"*")) kill metricData(metricClassName,inst)
+			}			
 		}
 		
+		
 		// Build JSON for measures
-		$$$THROWONERROR(tSC,..buildJSON(.metricData,StructuredOutput,DelimeterForFlattenedData,.json))
+		$$$THROWONERROR(tSC,..buildJSON(.metricData,StructuredOutput,DelimeterForFlattenedData,OmmitClassName,.intHideArr,.json))
 			  
 		;# Write JSON to foreground for now
 		if $d(json),$isObject(json) {
@@ -101,10 +116,13 @@ ClassMethod GetMetricClassData(namespace, metricClassName = "") As %Status
 	quit $$$OK
 }
 
-ClassMethod getParams(StructuredOutput, DelimeterForFlattenedData)
+ClassMethod getParams(StructuredOutput, DelimeterForFlattenedData,OmmitClassName,HideMetrics)
 {
-	set StructuredOutput=$GET(%request.Data("StructuredData",1),0)
+	set StructuredOutput=$GET(%request.Data("StructuredOutput",1),0)
 	set DelimeterForFlattenedData=$GET(%request.Data("DelimeterForFlattenedData",1),"_")
+	set OmmitClassName=$GET(%request.Data("OmmitClassName",1),0)
+	set HideMetrics=$GET(%request.Data("HideMetrics",1),"")
+	
 }
 
 ClassMethod getProductionBusinessMetrics(results, ignoreStatus = 0)

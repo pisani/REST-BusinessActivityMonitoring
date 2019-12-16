@@ -35,13 +35,13 @@ Method OnCalculateMetrics() As %Status
 	
 	Quit $$$OK
 } 
- 
+
 /// Instances - define instances
 ClassMethod OnGetInstances(ByRef pInstSet As %String) As %Status 
 { 
+	
 	set pInstSet(1)="North"
 	set pInstSet(2)="South"
 	Quit $$$OK
-} 
-
+}  
 }

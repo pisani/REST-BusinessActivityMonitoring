@@ -12,7 +12,7 @@ Class zaux.rBAM.Operation Extends (EnsLib.REST.Operation, zaux.rBAM.Utils) [ Lan
 
 Parameter INVOCATION = "Queue";
 
-Parameter SETTINGS = "CallInterval:REST Output,StructuredOutput:REST Output,SkipEmptyJSON:REST Output,BusinessMetricsNames:REST Output:selector?multiSelect=1&context={Ens.ContextSearch/SubclassOf?class=Ens.BusinessMetric},ClassNamePrefix:REST Output,IgnoreMetrics:REST Output";
+Parameter SETTINGS = "CallInterval:REST Output,StructuredOutput:REST Output,SkipEmptyJSON:REST Output,BusinessMetricsNames:REST Output:selector?multiSelect=1&context={Ens.ContextSearch/SubclassOf?class=Ens.BusinessMetric},ClassNamePrefix:REST Output,HideMetrics:REST Output";
 
 /// Identify this productions BusinessMetrics that will be interrogated for their most recent metric values
 Property BusinessMetricsNames As %String(MAXLEN = 1000) [ MultiDimensional ];
@@ -23,15 +23,19 @@ Property BusinessMetricsNames As %String(MAXLEN = 1000) [ MultiDimensional ];
 /// Note - if collecting metrics from multiple business services, and there are common metric names, then, these will be
 /// repeated, and the target will not be able to differentiate. 
 /// This setting applies when only one BusinessMetric class is used, or when metric names are unique across multiple BusinessMetric Classes 
-Property ClassNamePrefix as %Boolean [InitialExpression =0];
+Property ClassNamePrefix As %Boolean [ InitialExpression = 0 ];
 
 /// Comma separated list of Business Metric Property names to avoid from all output.<br/> 
 /// May also specify containing BusinessMetric Class name </br>
-/// Format:  [BusinessComponentName]:[Instance]:[MetricProperty],..
+/// Format:  [BusinessComponentName]:[Instance]:[MetricProperty],.. <br>
+/// <p>
+/// eg:  to hide the metric "totalRevenue", in the instance "North", from any BusinessMetricClass, specify:- </br>  
+/// 		 :North:totalRevenue
 /// 
-Property IgnoreMetrics as %String (MAXLEN=2500) [InitialExpression=""];
+Property HideMetrics As %String(MAXLEN = 2500);
 
-Property intIgnoreArr as %String [MultiDimensional,Private];
+Property intHideArr As %String [ MultiDimensional, Private ];
+
 /*
 // EG:
 // (Default, as require by PowerBI) 
@@ -108,27 +112,29 @@ Method OnKeepalive(pAdapterStatus As %Status) As %Status
 	set metricData=$zdt($h,3)
 	try
 	{
+		merge intHideArr=..intHideArr
+		
 		for i=1:1:$l(..BusinessMetricsNames,",") {
 			
 			set MetricClass=$piece(..BusinessMetricsNames,",",i) 
 			continue:MetricClass=""
-			continue:'##class(Ens.Director).IsItemEnabled(MetricClass,.status)
-			merge metricData(MetricClass)=$$$EnsMetrics(MetricClass)
 			
-			// ignore all metrics of given business class  ?
-			if $d(..intIgnoreArr(MetricClass,"*","*")) kill metricData(c)
-
-			// ignore all metrics of business class,instance combination
+			// hide all metrics of given business class  ?
+			if $d(intHideArr(MetricClass,"*","*")) continue
+			
+			continue:'##class(Ens.Director).IsItemEnabled(MetricClass,.status)
+			merge metricData(MetricClass)=$$$EnsMetrics(MetricClass) 
+			
+			// hide all metrics of business class,instance combination
 			set inst=""
 			for  {
 				set inst=$order(metricData(MetricClass,inst)) quit:inst=""
-				if $d(..intIgnoreArr(MetricClass,inst,"*")) kill metricData(MetricClass,inst)
+				if $d(intHideArr(MetricClass,inst,"*")) kill metricData(MetricClass,inst)
 			}
 		} 
 		
-		m intIgnoreArr=..intIgnoreArr
 		// Build JSON for measures
-		$$$THROWONERROR(tSC,..buildJSON(.metricData,..StructuredOutput,..DelimeterForFlattenedData,..ClassNamePrefix,.intIgnoreArr, .json))
+		$$$THROWONERROR(tSC,..buildJSON(.metricData,..StructuredOutput,..DelimeterForFlattenedData,..ClassNamePrefix,.intHideArr, .json))
 		  
 		;# Write JSON to foreground for now
 		if $d(json),$isObject(json) {
@@ -162,18 +168,9 @@ Method OnInit() As %Status
 {
 	set ..Adapter.KeepaliveInterval=..CallInterval
 	
-	set ignores=..IgnoreMetrics
-	for x=1:1:$l(ignores,",") { 
-		set mic=$piece(ignores,",",x) continue:mic=""
-		set m=$p(mic,":",3),i=$p(mic,":",2),c=$p(mic,":",1)
-		
- 		; setup ..intIgnoreArr() to be used later for purging metricData.
-		set:c="" c="*"
-		set:i="" i="*"
-		set:m="" m="*"
-		set ..intIgnoreArr(c,i,m)=""
-		
-	}	
+	do ..buildHideArray(..HideMetrics,.intHideArr)
+	merge ..intHideArr=intHideArr
+			
 	Quit $$$OK
 }
 

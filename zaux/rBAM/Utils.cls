@@ -1,7 +1,7 @@
 Class zaux.rBAM.Utils Extends %RegisteredObject
 {
 
-ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,OmmitClassName=1, %ignoreArrList, Output json As %DynamicObject) As %Status
+ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,OmmitClassName=1, %HideArrList, Output json As %DynamicObject) As %Status
 {
 	kill json
 	set tSC=$$$OK 
@@ -12,9 +12,7 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 
 	set tMetricClassName=""
 	set TimeStamp=metricData 
-	
-	zw %ignoreArrList
-	
+	 	
 	try { 
 		set data={}
 		set data."_Production"=production
@@ -46,12 +44,12 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 				set attMetric=tMetricClassName_del if OmmitClassName set attMetric=""
 				for  {
 					set i=$order(ins(i)) quit:i=""  
-					continue:..ignore("*",ins(i))
-					continue:..ignore(tMetricClassName,ins(i))
+					continue:..hide("*",ins(i))
+					continue:..hide(tMetricClassName,ins(i))
 					
 					for  {
 						set p=$order(pProperties(p)) quit:p=""  
-						continue:..ignore(tMetricClassName,ins(i),pProperties(p))
+						continue:..hide(tMetricClassName,ins(i),pProperties(p))
 											
 						if $d(metricData(tMetricClassName,ins(i),pProperties(p)))=1{
 							do data.%Set(attMetric_$select(flgMultiInstance:(ins(i)_del),1:"")_pProperties(p),metricData(tMetricClassName,ins(i),pProperties(p)))
@@ -81,8 +79,8 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 				for  { 
 					set instance={}
 					set i=$order(ins(i)) quit:i=""
-					continue:..ignore("*",ins(i)) 
-					continue:..ignore(tMetricClassName,ins(i))
+					continue:..hide("*",ins(i)) 
+					continue:..hide(tMetricClassName,ins(i))
 					
 					if flgMultiInstance {
 						set instance.instanceName=ins(i)
@@ -92,7 +90,7 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 					for  { 
 						set metric={}
 						set p=$order(pProperties(p)) quit:p="" 
-						continue:..ignore(tMetricClassName,ins(i),pProperties(p))
+						continue:..hide(tMetricClassName,ins(i),pProperties(p))
 						
 						if $d(metricData(tMetricClassName,ins(i),pProperties(p)))=1 {
 							do metric.%Set(pProperties(p),metricData(tMetricClassName,ins(i),pProperties(p)))
@@ -155,11 +153,26 @@ ClassMethod getPropertiesForDataSource(pDataSource As %String, Output pPropertie
 	Quit tSC
 }
 
-ClassMethod ignore(class="*",instance="*",property="*") as %Boolean {
+ClassMethod buildHideArray(HideMetricsString,intHideArr) {
+ 
+	kill intHideArr
+	for x=1:1:$l(HideMetricsString,",") { 
+		set mic=$piece(HideMetricsString,",",x) continue:mic=""
+		set m=$p(mic,":",3),i=$p(mic,":",2),c=$p(mic,":",1)
+		
+ 		; setup intHideArr() to be used later for skipping over specific entries from collected metric data.
+		set:c="" c="*"
+		set:i="" i="*"
+		set:m="" m="*"
+		set intHideArr(c,i,m)=""
+	}	
+}
+
+ClassMethod hide(class="*",instance="*",property="*") as %Boolean {
 	
-	quit:$d(%ignoreArrList("*","*",property)) 1
-	quit:$d(%ignoreArrList("*",instance,property)) 1
-	quit:$d(%ignoreArrList(class,instance,property)) 1
+	quit:$d(%HideArrList("*","*",property)) 1
+	quit:$d(%HideArrList("*",instance,property)) 1
+	quit:$d(%HideArrList(class,instance,property)) 1
 	
 	quit 0
 	}
