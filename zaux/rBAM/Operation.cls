@@ -1,7 +1,8 @@
 /// TODO:
 /// 3. Create a zaux.bs.SampleMetrics class good for the Quickstart Interoperability solution.
 /// 4. Create API as %zaux.rBAM.API for CACHELIB install. Document appropriatly
-/// 
+/// 5. Expose Units ?
+
 /// 98. Make github repository public !
 /// 99. Complete Documentation and Post !
 /// This Business Operation sends, over HTTP using REST (POST) the values of one or more Business Metric classes.
@@ -26,11 +27,11 @@ Property BusinessMetricsNames As %String(MAXLEN = 1000) [ MultiDimensional ];
 Property ClassNamePrefix As %Boolean [ InitialExpression = 0 ];
 
 /// Comma separated list of Business Metric Property names to avoid from all output.<br/> 
-/// May also specify containing BusinessMetric Class name </br>
+/// May specify BusinessMetric ClassName, Instance name and or MetricPropertyName </br>
 /// Format:  [BusinessComponentName]:[Instance]:[MetricProperty],.. <br>
 /// <p>
-/// eg:  to hide the metric "totalRevenue", in the instance "North", from any BusinessMetricClass, specify:- </br>  
-/// 		 :North:totalRevenue
+/// eg:  to hide the metric "totalRevenue", in the instance "North", from any BusinessMetricClass, specify, (without quotes):- </br>  
+/// 		 ":North:totalRevenue"
 /// 
 Property HideMetrics As %String(MAXLEN = 2500);
 
@@ -101,7 +102,7 @@ Property DelimeterForFlattenedData As %String [ InitialExpression = "_" ];
 /// Don't send JSON if JSON is empty.
 Property SkipEmptyJSON As %Boolean [ InitialExpression = 1 ];
 
-Parameter DEBUG As %Boolean = 1;
+Parameter DEBUG As %Boolean = 0;
 
 /// This method will be called within KeepaliveInterval of the last return from OnTask() or OnKeepalive().
 /// It is called via the Adapter's OnKeepalive() method, which is called from the Host.OnTask() method;
