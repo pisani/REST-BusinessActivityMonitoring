@@ -13,7 +13,7 @@ XData UrlMap
 {
 <Routes>
 <Route Url="/:namespace/Data"					Method="GET" 		Call="GetMetricClassData"/>
-<Route Url="/:namespace/Data/:metricClassname"	Method="GET" 		Call="GetMetricClassData"/>
+<Route Url="/:namespace/Data/:metricHostName"	Method="GET" 		Call="GetMetricClassData"/>
 <Route Url="/:namespace/List"					Method="GET" 		Call="GetMetricClasses"/>
 </Routes>
 }
@@ -25,19 +25,25 @@ ClassMethod GetMetricClasses(namespace) As %Status
 		
 		do ..getProductionBusinessMetrics(.hostList,1)
 		set c=""
-		set json=[]
+		set json={}
+		set json."_Production"=##class(Ens.Director).GetActiveProductionName()
+		set items=[]
 		
 		for  {
 			set c=$order(hostList(c)) quit:c=""
 			set class={}
 			set class.ConfigName=hostList(c)
+			set class.DataURL=$piece(%request.URL,"/",1,$l(%request.URL,"/")-1)_"/Data/"_class.ConfigName
 			set class.Enabled=##class(Ens.Director).IsItemEnabled(hostList(c),.status)
-			do json.%Push(class)
+			
+			do items.%Push(class)
 		}
 
 	} catch ex { 	
 		set tSC=ex.AsStatus()
 	}
+	
+	set json.items=items
 	
 	if $$$ISERR(tSC) {
 		// Setup Error response 
@@ -51,7 +57,7 @@ ClassMethod GetMetricClasses(namespace) As %Status
 	quit $$$OK
 }
 
-ClassMethod GetMetricClassData(namespace, metricClassName = "") As %Status
+ClassMethod GetMetricClassData(namespace, metricHostName = "") As %Status
 {
 	set tSC=$$$OK
 	set metricData=$zdt($h,3)
@@ -62,14 +68,16 @@ ClassMethod GetMetricClassData(namespace, metricClassName = "") As %Status
 			do ..buildHideArray(HideMetricsString,.intHideArr)
 		} 
 		
-		if metricClassName="" { 
+		if metricHostName="" { 
 			do ..getProductionBusinessMetrics(.hostList,0)
 		} else {  
-			if '##class(%Dictionary.CompiledClass).%ExistsId(metricClassName) {
+			
+			set class=##class(zaux.rBAM.Utils).resolveClassName(metricHostName)
+			if '##class(%Dictionary.CompiledClass).%ExistsId(class) {
 				// class not found or not enabled
-				$$$ThrowStatus($$$ERROR($$$GeneralError,metricClassName_" is not found, or not enabled to run."))
+				$$$ThrowStatus($$$ERROR($$$GeneralError,metricHostName_" is not found, or not enabled to run."))
 			} else {
-				set hostList(1)=metricClassName
+				set hostList(1)=metricHostName
 			}
 		}
 		
@@ -78,18 +86,18 @@ ClassMethod GetMetricClassData(namespace, metricClassName = "") As %Status
 		
 		for  {
 			set c=$order(hostList(c)) quit:c=""
-			set metricClassName=hostList(c)
+			set metricHostName=hostList(c)
 
 			// specifically hide all metrics of given business class  ?
-			if $d(intHideArr(metricClassName,"*","*")) continue
+			if $d(intHideArr(metricHostName,"*","*")) continue
 			
-			merge metricData(metricClassName)=$$$EnsMetrics(metricClassName)
+			merge metricData(metricHostName)=$$$EnsMetrics(metricHostName)
 			 
 			// hide all metrics of business class+instance combination
 			set inst=""
 			for  {
-				set inst=$order(metricData(metricClassName,inst)) quit:inst=""
-				if $d(intHideArr(metricClassName,inst,"*")) kill metricData(metricClassName,inst)
+				set inst=$order(metricData(metricHostName,inst)) quit:inst=""
+				if $d(intHideArr(metricHostName,inst,"*")) kill metricData(metricHostName,inst)
 			}			
 		}
 		
@@ -127,9 +135,11 @@ ClassMethod getParams(StructuredOutput, DelimeterForFlattenedData,OmmitClassName
 
 ClassMethod getProductionBusinessMetrics(results, ignoreStatus = 0)
 {
-	set pParams("class")="Ens.BusinessMetric" 
-	do ##class(Ens.ContextSearch).SubclassOf(.cap,.top,.results,.pParams)
 	
+	set pParams("services")=1
+	set pParams("productionName")=$$$EnsRuntime("Name")
+	set pParams("className")="Ens.BusinessMetric" 
+	do ##class(Ens.ContextSearch).ProductionItems(.cap,.top,.results,.pParams)
 	quit:ignoreStatus
 	
 	set c=""

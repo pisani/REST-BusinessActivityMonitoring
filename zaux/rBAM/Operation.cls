@@ -1,8 +1,7 @@
-/// TODO:
-/// 3. Create a zaux.bs.SampleMetrics class good for the Quickstart Interoperability solution.
+/// TODO: 
 /// 4. Create API as %zaux.rBAM.API for CACHELIB install. Document appropriatly
-/// 5. Expose Units ?
-
+/// 5. Expose Units ? 
+/// 7 remove debug flag. 
 /// 98. Make github repository public !
 /// 99. Complete Documentation and Post !
 /// This Business Operation sends, over HTTP using REST (POST) the values of one or more Business Metric classes.
@@ -13,7 +12,7 @@ Class zaux.rBAM.Operation Extends (EnsLib.REST.Operation, zaux.rBAM.Utils) [ Lan
 
 Parameter INVOCATION = "Queue";
 
-Parameter SETTINGS = "CallInterval:REST Output,StructuredOutput:REST Output,SkipEmptyJSON:REST Output,BusinessMetricsNames:REST Output:selector?multiSelect=1&context={Ens.ContextSearch/SubclassOf?class=Ens.BusinessMetric},ClassNamePrefix:REST Output,HideMetrics:REST Output";
+Parameter SETTINGS = "CallInterval:REST Output,StructuredOutput:REST Output,SkipEmptyJSON:REST Output,BusinessMetricsNames:REST Output:selector?multiSelect=1&context={Ens.ContextSearch/ProductionItems?services=1&productionName=@productionId&className=Ens.BusinessMetric},ClassNamePrefix:REST Output,HideMetrics:REST Output";
 
 /// Identify this productions BusinessMetrics that will be interrogated for their most recent metric values
 Property BusinessMetricsNames As %String(MAXLEN = 1000) [ MultiDimensional ];
@@ -30,7 +29,7 @@ Property ClassNamePrefix As %Boolean [ InitialExpression = 0 ];
 /// May specify BusinessMetric ClassName, Instance name and or MetricPropertyName </br>
 /// Format:  [BusinessComponentName]:[Instance]:[MetricProperty],.. <br>
 /// <p>
-/// eg:  to hide the metric "totalRevenue", in the instance "North", from any BusinessMetricClass, specify, (without quotes):- </br>  
+/// eg:  to hide the metric "totalRevenue", in the instance "North", from any BusinessHostname, specify, (without quotes):- </br>  
 /// 		 ":North:totalRevenue"
 /// 
 Property HideMetrics As %String(MAXLEN = 2500);
@@ -63,7 +62,7 @@ Property intHideArr As %String [ MultiDimensional, Private ];
 // {
 // 		"_Production" :"AAAAA555555",
 // 		"_SampledDateTime" :"AAAAA555555",
-// 		"_MetricClassName":"zaux.bs.SampleMetrics",
+// 		"_HostnameName":"zaux.bs.SampleMetrics",
 // 		"instances": [
 // 						 	{"metrics" [
 // 								 {"City" :"AAAAA555555"},
@@ -102,7 +101,7 @@ Property DelimeterForFlattenedData As %String [ InitialExpression = "_" ];
 /// Don't send JSON if JSON is empty.
 Property SkipEmptyJSON As %Boolean [ InitialExpression = 1 ];
 
-Parameter DEBUG As %Boolean = 0;
+Parameter DEBUG As %Boolean = 1;
 
 /// This method will be called within KeepaliveInterval of the last return from OnTask() or OnKeepalive().
 /// It is called via the Adapter's OnKeepalive() method, which is called from the Host.OnTask() method;
@@ -117,20 +116,20 @@ Method OnKeepalive(pAdapterStatus As %Status) As %Status
 		
 		for i=1:1:$l(..BusinessMetricsNames,",") {
 			
-			set MetricClass=$piece(..BusinessMetricsNames,",",i) 
-			continue:MetricClass=""
+			set Hostname=$piece(..BusinessMetricsNames,",",i) 
+			continue:Hostname=""
 			
 			// hide all metrics of given business class  ?
-			if $d(intHideArr(MetricClass,"*","*")) continue
+			if $d(intHideArr(Hostname,"*","*")) continue
 			
-			continue:'##class(Ens.Director).IsItemEnabled(MetricClass,.status)
-			merge metricData(MetricClass)=$$$EnsMetrics(MetricClass) 
+			continue:'##class(Ens.Director).IsItemEnabled(Hostname,.status)
+			merge metricData(Hostname)=$$$EnsMetrics(Hostname) 
 			
 			// hide all metrics of business class,instance combination
 			set inst=""
 			for  {
-				set inst=$order(metricData(MetricClass,inst)) quit:inst=""
-				if $d(intHideArr(MetricClass,inst,"*")) kill metricData(MetricClass,inst)
+				set inst=$order(metricData(Hostname,inst)) quit:inst=""
+				if $d(intHideArr(Hostname,inst,"*")) kill metricData(Hostname,inst)
 			}
 		} 
 		
@@ -171,7 +170,7 @@ Method OnInit() As %Status
 	
 	do ..buildHideArray(..HideMetrics,.intHideArr)
 	merge ..intHideArr=intHideArr
-			
+	
 	Quit $$$OK
 }
 

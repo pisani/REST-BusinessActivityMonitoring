@@ -1,16 +1,16 @@
 Class zaux.rBAM.Utils Extends %RegisteredObject
 {
 
+ 
 ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,OmmitClassName=1, %HideArrList, Output json As %DynamicObject) As %Status
 {
 	kill json
 	set tSC=$$$OK 
 	set json=[]
 	
-	// Get Properties of metric class.
 	set production=##class(Ens.Director).GetActiveProductionName()
 
-	set tMetricClassName=""
+	set tMetricHostname=""
 	set TimeStamp=metricData 
 	 	
 	try { 
@@ -24,10 +24,10 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 				
 		for  {
 			kill pProperties,ins
-			set tMetricClassName=$order(metricData(tMetricClassName)) quit:tMetricClassName=""		
+			set tMetricHostname=$order(metricData(tMetricHostname)) quit:tMetricHostname=""		
 		
-			// Get Metric Instances.
-			do $CLASSMETHOD(tMetricClassName,"GetInstances",.ins)
+			// Get Metric Instances.  
+			do $CLASSMETHOD(..resolveClassName(tMetricHostname),"GetInstances",.ins)
 			
 			// record if multi-instance, using 'flgMultiInatance', so that in the 'flat' output format, avoid adding
 			// "1" as an instance ID, with each metric.
@@ -36,31 +36,31 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 				set flgMultiInstance=0
 			}
 						
-			Set tFullMetricClass=production_"/"_tMetricClassName 
+			Set tFullMetricClass=production_"/"_tMetricHostname 
 			Set tsc = ..getPropertiesForDataSource(tFullMetricClass_".metric",.pProperties)
 						
 			set i="",p="" 
 			if StructuredOutput=0 {				
-				set attMetric=tMetricClassName_del if OmmitClassName set attMetric=""
+				set attMetric=tMetricHostname_del if OmmitClassName set attMetric=""
 				for  {
 					set i=$order(ins(i)) quit:i=""  
 					continue:..hide("*",ins(i))
-					continue:..hide(tMetricClassName,ins(i))
+					continue:..hide(tMetricHostname,ins(i))
 					
 					for  {
 						set p=$order(pProperties(p)) quit:p=""  
-						continue:..hide(tMetricClassName,ins(i),pProperties(p))
+						continue:..hide(tMetricHostname,ins(i),pProperties(p))
 											
-						if $d(metricData(tMetricClassName,ins(i),pProperties(p)))=1{
-							do data.%Set(attMetric_$select(flgMultiInstance:(ins(i)_del),1:"")_pProperties(p),metricData(tMetricClassName,ins(i),pProperties(p)))
+						if $d(metricData(tMetricHostname,ins(i),pProperties(p)))=1{
+							do data.%Set(attMetric_$select(flgMultiInstance:(ins(i)_del),1:"")_pProperties(p),metricData(tMetricHostname,ins(i),pProperties(p)))
 						} 
 						
 						// sub nodes ?
-						if $DATA(metricData(tMetricClassName,ins(i),pProperties(p)))>9 {
+						if $DATA(metricData(tMetricHostname,ins(i),pProperties(p)))>9 {
 							set sn=""
 							for  {
-								set sn=$order(metricData(tMetricClassName,ins(i),pProperties(p),sn)) quit:sn="" 
-								do data.%Set(attMetric_$select(flgMultiInstance:(ins(i)_del),1:"")_pProperties(p)_del_sn,metricData(tMetricClassName,ins(i),pProperties(p),sn))
+								set sn=$order(metricData(tMetricHostname,ins(i),pProperties(p),sn)) quit:sn="" 
+								do data.%Set(attMetric_$select(flgMultiInstance:(ins(i)_del),1:"")_pProperties(p)_del_sn,metricData(tMetricHostname,ins(i),pProperties(p),sn))
 							}
 						}
 					}
@@ -69,7 +69,7 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 			} else {
 				 
 				set data={}
-				set data."_MetricClassName"=tMetricClassName
+				set data."_MetricClassName"=tMetricHostname
 				
 				if flgMultiInstance {
 					set data.instance=[]
@@ -80,7 +80,7 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 					set instance={}
 					set i=$order(ins(i)) quit:i=""
 					continue:..hide("*",ins(i)) 
-					continue:..hide(tMetricClassName,ins(i))
+					continue:..hide(tMetricHostname,ins(i))
 					
 					if flgMultiInstance {
 						set instance.instanceName=ins(i)
@@ -90,20 +90,20 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 					for  { 
 						set metric={}
 						set p=$order(pProperties(p)) quit:p="" 
-						continue:..hide(tMetricClassName,ins(i),pProperties(p))
+						continue:..hide(tMetricHostname,ins(i),pProperties(p))
 						
-						if $d(metricData(tMetricClassName,ins(i),pProperties(p)))=1 {
-							do metric.%Set(pProperties(p),metricData(tMetricClassName,ins(i),pProperties(p)))
+						if $d(metricData(tMetricHostname,ins(i),pProperties(p)))=1 {
+							do metric.%Set(pProperties(p),metricData(tMetricHostname,ins(i),pProperties(p)))
 						}
 						// sub nodes ?
-						if $DATA(metricData(tMetricClassName,ins(i),pProperties(p)))>9 {
+						if $DATA(metricData(tMetricHostname,ins(i),pProperties(p)))>9 {
 							//
 							set sn="",subnodes=[]
 							for  {
 								set subnode={}
-								set sn=$order(metricData(tMetricClassName,ins(i),pProperties(p),sn)) quit:sn="" 
+								set sn=$order(metricData(tMetricHostname,ins(i),pProperties(p),sn)) quit:sn="" 
 								set subnode.key=sn
-								set subnode.value=metricData(tMetricClassName,ins(i),pProperties(p),sn)
+								set subnode.value=metricData(tMetricHostname,ins(i),pProperties(p),sn)
 								do subnodes.%Push(subnode)
 							}
 							// Add metric with subnodes array
@@ -176,4 +176,9 @@ ClassMethod hide(class="*",instance="*",property="*") as %Boolean {
 	
 	quit 0
 	}
+
+ClassMethod resolveClassName(itemName) as %String 
+{ 
+	quit ##class(Ens.Config.Production).OpenItemByConfigName(itemName).ClassName
+}
 }
