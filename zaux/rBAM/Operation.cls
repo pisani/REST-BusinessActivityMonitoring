@@ -2,6 +2,8 @@
 /// 4. Create API as %zaux.rBAM.API for CACHELIB install. Document appropriatly
 /// 5. Expose Units ? 
 /// 7 remove debug flag. 
+/// 8. Wildcard for MetricClass in HideMEtrics ?
+
 /// 98. Make github repository public !
 /// 99. Complete Documentation and Post !
 /// This Business Operation sends, over HTTP using REST (POST) the values of one or more Business Metric classes.
@@ -12,10 +14,10 @@ Class zaux.rBAM.Operation Extends (EnsLib.REST.Operation, zaux.rBAM.Utils) [ Lan
 
 Parameter INVOCATION = "Queue";
 
-Parameter SETTINGS = "CallInterval:REST Output,StructuredOutput:REST Output,SkipEmptyJSON:REST Output,BusinessMetricsNames:REST Output:selector?multiSelect=1&context={Ens.ContextSearch/ProductionItems?services=1&productionName=@productionId&className=Ens.BusinessMetric},ClassNamePrefix:REST Output,HideMetrics:REST Output";
+Parameter SETTINGS = "CallInterval:REST Output,StructuredOutput:REST Output,SkipEmptyJSON:REST Output,ServiceClassNames:REST Output:selector?multiSelect=1&context={Ens.ContextSearch/ProductionItems?services=1&productionName=@productionId&className=Ens.BusinessMetric},ClassNamePrefix:REST Output,HideMetrics:REST Output";
 
 /// Identify this productions BusinessMetrics that will be interrogated for their most recent metric values
-Property BusinessMetricsNames As %String(MAXLEN = 1000) [ MultiDimensional ];
+Property ServiceClassNames As %String(MAXLEN = 1000) [ MultiDimensional ];
 
 /// This applies to No-Structured JSON ouput. FALSE by default
 /// <br>
@@ -114,9 +116,9 @@ Method OnKeepalive(pAdapterStatus As %Status) As %Status
 	{
 		merge intHideArr=..intHideArr
 		
-		for i=1:1:$l(..BusinessMetricsNames,",") {
+		for i=1:1:$l(..ServiceClassNames,",") {
 			
-			set Hostname=$piece(..BusinessMetricsNames,",",i) 
+			set Hostname=$piece(..ServiceClassNames,",",i) 
 			continue:Hostname=""
 			
 			// hide all metrics of given business class  ?
