@@ -1,8 +1,16 @@
 Class zaux.rBAM.Utils Extends %RegisteredObject
 {
 
- 
-ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,OmmitClassName=1, %HideArrList, Output json As %DynamicObject) As %Status
+/// This is the core method that generates JSON for metrics being captured by a producion.
+/// metricData 				- Array of metric readings captured from ^IRIS.Temp.EnsMetrics in the form of:
+///							  metricData(<hostName>,<instanceName or 1>,<metricPropertyName>,<AutoHistoryNumber or Multi-Dimensional subscript>)					 
+/// StructuredOutput		- 0/1 for a 'flat', single level JSON object, or multi-level structured JSON output format
+/// IncludeMetricParameters	- 0/1 defining whether to hide/show RANGEUPPER, RANGELOWER, etc metric property parameters
+/// DelimeterForFlatData	- Delimeter (single character) to use when generating the non-Structured format of JSON data
+/// OmmitClassName			- 0/1 define whether to include/exclude MetricClassName when generating the non-Structured format of JSON data
+/// %HideArraMap			- Array of metricClass,instance,metricProperty names to hide from output, for the purposes of hiding specific metricProperties.
+/// json					- generated JSON Object of metric data.
+ClassMethod buildJSON(metricData, StructuredOutput=0, IncludeMetricParameters=0,DelimeterForFlatData="-",OmmitClassName=1, %HideArrMap, Output json As %DynamicObject) As %Status
 {
 	kill json
 	set tSC=$$$OK 
@@ -19,15 +27,32 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 		set data."_SampledDateTime"=TimeStamp
 	
 		if StructuredOutput=0 {
-			set del=DelimeterForFlattenedData
+			set del=DelimeterForFlatData
+		}
+		
+		// remove metrics flagged for as hidden in %HideArrMap
+		for  {
+			set tMetricHostname=$order(metricData(tMetricHostname)) quit:tMetricHostname=""	
+			
+			// Check for hiding all metrics of given business class 
+			if $d(%HideArrMap(tMetricHostname,"*","*")) kill metricData(tMetricHostname) continue
+			
+			// Check for hiding specific instances metrics of given business class
+			set inst=""
+			for  {
+				set inst=$order(metricData(tMetricHostname,inst)) quit:inst=""
+				if $d(%HideArrMap(tMetricHostname,inst,"*")) kill metricData(tMetricHostname,inst)
+			}
 		}
 				
+		set tMetricHostname=""		
 		for  {
 			kill pProperties,ins
 			set tMetricHostname=$order(metricData(tMetricHostname)) quit:tMetricHostname=""		
 		
 			// Get Metric Instances.  
-			do $CLASSMETHOD(..resolveClassName(tMetricHostname),"GetInstances",.ins)
+			set tMetricClassName=..resolveClassName(tMetricHostname)
+			do $CLASSMETHOD(tMetricClassName,"GetInstances",.ins)
 			
 			// record if multi-instance, using 'flgMultiInatance', so that in the 'flat' output format, avoid adding
 			// "1" as an instance ID, with each metric.
@@ -35,10 +60,9 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 			if $g(ins(1))=1,$order(ins(""))=1,$order(ins(1),-1)="" {
 				set flgMultiInstance=0
 			}
-						
-			Set tFullMetricClass=production_"/"_tMetricHostname 
-			Set tsc = ..getPropertiesForDataSource(tFullMetricClass_".metric",.pProperties)
-						
+						 
+			Set tSC = ..getPropertiesForDataSource(tMetricClassName,IncludeMetricParameters,.pProperties)
+							
 			set i="",p="" 
 			if StructuredOutput=0 {				
 				set attMetric=tMetricHostname_del if OmmitClassName set attMetric=""
@@ -50,8 +74,9 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 					for  {
 						set p=$order(pProperties(p)) quit:p=""  
 						continue:..hide(tMetricHostname,ins(i),pProperties(p))
-											
-						if $d(metricData(tMetricHostname,ins(i),pProperties(p)))=1{
+						continue:..hide(tMetricHostname,"*",pProperties(p))
+																	
+						if $d(metricData(tMetricHostname,ins(i),pProperties(p)))=1 {
 							do data.%Set(attMetric_$select(flgMultiInstance:(ins(i)_del),1:"")_pProperties(p),metricData(tMetricHostname,ins(i),pProperties(p)))
 						} 
 						
@@ -63,6 +88,14 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 								do data.%Set(attMetric_$select(flgMultiInstance:(ins(i)_del),1:"")_pProperties(p)_del_sn,metricData(tMetricHostname,ins(i),pProperties(p),sn))
 							}
 						}
+						
+						// add property parameters
+						set meta=""
+						for  {
+							set meta=$order(pProperties(p,meta)) quit:meta=""
+							do data.%Set(attMetric_pProperties(p)_"("_meta_")",pProperties(p,meta))
+						}
+						
 					}
 				}
 				
@@ -86,6 +119,24 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 						set instance.instanceName=ins(i)
 					}
 					
+					if IncludeMetricParameters {
+						set metricProperties=[],p=""
+						for  { 
+							set p=$order(pProperties(p)) quit:p="" 
+						
+							// add property parameters
+							set meta=""
+							set metricProp={}
+							set metricProp.Metric=pProperties(p)
+							for  {
+								set meta=$order(pProperties(p,meta)) quit:meta=""
+								do metricProp.%Set(meta,pProperties(p,meta))
+							}
+							do metricProperties.%Push(metricProp)			
+						}
+					}
+					
+					// add values.	
 					set metrics=[],p=""
 					for  { 
 						set metric={}
@@ -95,6 +146,7 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 						if $d(metricData(tMetricHostname,ins(i),pProperties(p)))=1 {
 							do metric.%Set(pProperties(p),metricData(tMetricHostname,ins(i),pProperties(p)))
 						}
+						
 						// sub nodes ?
 						if $DATA(metricData(tMetricHostname,ins(i),pProperties(p)))>9 {
 							//
@@ -112,12 +164,15 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 						do metrics.%Push(metric)
 					}
 					set instance.metrics=metrics
+					
 					if flgMultiInstance {
 						do data.instance.%Push(instance)			
 					} else {
 						set data.instance=instance
 					}
 				}
+				
+				if IncludeMetricParameters set data.metricProperties= metricProperties
 				do json.%Push(data)
 			}
 		}
@@ -128,23 +183,34 @@ ClassMethod buildJSON(metricData, StructuredOutput, DelimeterForFlattenedData,Om
 		set tSC=ex.AsStatus() 
 	}
 	
+	set tSC=..OnBuildJSON(.json)
 	quit tSC
 }
 
-ClassMethod getPropertiesForDataSource(pDataSource As %String, Output pProperties As %List) As %Status
+classMethod getSampleTime() as %String {
+
+	set st=$zdt($h,3,,3)
+	set st=$tr(st," ","T")
+	quit st
+	
+}
+ClassMethod getPropertiesForDataSource(pDataSource As %String,IncludeMetricParameters, Output pProperties ) As %Status
 {
 	Set tSC = $$$OK
 	Try {
-		Set tSC = $zobjclassmethod("Ens.BusinessMetricKPI","%GetPropertyInfo",.tInfo,0,pDataSource)
-		If $$$ISERR(tSC) Quit
-
-		Set n = 0
-		Set p = $O(tInfo(""))
-		While (p'="") {
-			If (p'["%") {
-				Set pProperties($I(n))=p
+		set class=##class(%Dictionary.CompiledClass).%OpenId(pDataSource)
+		set pCount=class.Properties.Count()
+		set n=0
+		for i=1:1:pCount {
+			continue:class.Properties.GetAt(i).Type'="Ens.DataType.Metric"
+			set prop=class.Properties.GetAt(i)
+			continue:$extract(prop.Name)="%"
+			
+			set n=n+1,pProperties(n)=prop.Name
+			continue:'IncludeMetricParameters
+			for meta="UNITS","RANGEUPPER","RANGELOWER","THRESHOLDUPPER","THRESHOLDLOWER" {
+				set pProperties(n,meta)=prop.Parameters.GetAt(meta)
 			}
-			Set p = $O(tInfo(p))
 		}
 	}
 	Catch(ex) {
@@ -153,6 +219,8 @@ ClassMethod getPropertiesForDataSource(pDataSource As %String, Output pPropertie
 	Quit tSC
 }
 
+/// take user-specified configuration sting of metric data to hide, and turn it
+/// into a 3-dimensional array to be used during the data collection/projection phase.
 ClassMethod buildHideArray(HideMetricsString,intHideArr) {
  
 	kill intHideArr
@@ -170,15 +238,23 @@ ClassMethod buildHideArray(HideMetricsString,intHideArr) {
 
 ClassMethod hide(class="*",instance="*",property="*") as %Boolean {
 	
-	quit:$d(%HideArrList("*","*",property)) 1
-	quit:$d(%HideArrList("*",instance,property)) 1
-	quit:$d(%HideArrList(class,instance,property)) 1
+	quit:$d(%HideArrMap("*","*",property)) 1
+	quit:$d(%HideArrMap("*",instance,property)) 1
+	quit:$d(%HideArrMap(class,instance,property)) 1
 	
 	quit 0
 	}
 
 ClassMethod resolveClassName(itemName) as %String 
 { 
-	quit ##class(Ens.Config.Production).OpenItemByConfigName(itemName).ClassName
+	set configItem=##class(Ens.Config.Production).OpenItemByConfigName(itemName)
+	if $IsObject(configItem) quit configItem.ClassName
+	quit ""
 }
+
+/// Called after normal compilation of JSON body just before sending result.
+ClassMethod OnBuildJSON(json as %Library.DynamicObject) as %Status {
+	
+	quit $$$OK
 }
+} 

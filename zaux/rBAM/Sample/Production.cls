@@ -6,9 +6,6 @@ XData ProductionDefinition
 <Production Name="zaux.rBAM.Sample.Production" TestingEnabled="true" LogGeneralTraceEvents="false">
   <Description></Description>
   <ActorPoolSize>2</ActorPoolSize>
-   <Item Name="zaux.bs.SampleMetrics" Category="" ClassName="zaux.bs.SampleMetrics" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
-    <Setting Target="Adapter" Name="CallInterval">5</Setting>
-  </Item>
   <Item Name="zaux.rBAM.Operation" Category="" ClassName="zaux.rBAM.Operation" PoolSize="1" Enabled="true" Foreground="true" Comment="" LogTraceEvents="false" Schedule="">
     <Setting Target="Host" Name="StructuredOutput">0</Setting>
     <Setting Target="Adapter" Name="HTTPPort">443</Setting>
@@ -18,6 +15,11 @@ XData ProductionDefinition
     <Setting Target="Adapter" Name="Credentials">PowerBI</Setting>
     <Setting Target="Adapter" Name="SSLCheckServerIdentity">0</Setting>
     <Setting Target="Host" Name="ClassNamePrefix">0</Setting>
+    <Setting Target="Host" Name="BusinessMetricsNames">EnvironmentalMetrics</Setting>
+  </Item>
+  <Item Name="EnvironmentalMetrics" Category="" ClassName="zaux.rBAM.Sample.MetricClass" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
+  </Item>
+  <Item Name="zaux.bs.SampleMetrics1" Category="" ClassName="zaux.bs.SampleMetrics1" PoolSize="1" Enabled="false" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
   </Item>
 </Production>
 }

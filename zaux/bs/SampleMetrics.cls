@@ -3,10 +3,11 @@ Class zaux.bs.SampleMetrics Extends Ens.BusinessMetric [ ClassType = "", Procedu
 {
 
 /// Metric to expose average temperature from readings gathered in last 24 hours.
-Property AverageDailyTemp As Ens.DataType.Metric(UNITS = "Degrees");
+Property AverageDailyTemp As Ens.DataType.Metric(UNITS = "Degrees",RANGEUPPER=100,RANGELOWER=10);
 
 /// Metric to export readings from multiple AirQuality sensors
-Property AirQuality as Ens.DataType.Metric [Multidimensional];
+Property AirQuality as Ens.DataType.Metric(RANGEUPPER=200,RANGELOWER=20) [Multidimensional];
+ 
 
 /// Calculate and update the set of metrics for this class
 /// This method is just a sample, and generates random values (not using real data) only for demo purposes.
@@ -21,8 +22,8 @@ Method OnCalculateMetrics() As %Status
 	SET ..AirQuality("Offices")= 		300+$r(10)
 	SET ..AirQuality("CarPark")=		200+$r(10)
 	SET ..AirQuality("LoadingDocks")=	100+$r(10) 
-	 
+	  
 	Quit $$$OK
 } 
 
- }
+}

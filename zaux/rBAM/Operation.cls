@@ -1,9 +1,9 @@
 /// TODO: 
 /// 4. Create API as %zaux.rBAM.API for CACHELIB install. Document appropriatly
-/// 5. Expose Units ? 
-/// 7 remove debug flag. 
+/// 5. remove debug flag. 
 /// 8. Wildcard for MetricClass in HideMEtrics ?
-
+/// 8. need BEtter Sample.Metrics example to be able to plot (1) Line Chart (time-based values), Gauges and bar chart (catogry based values)
+/// if HTTP Error, disable operation otherwise Event Log fills up !!
 /// 98. Make github repository public !
 /// 99. Complete Documentation and Post !
 /// This Business Operation sends, over HTTP using REST (POST) the values of one or more Business Metric classes.
@@ -14,7 +14,7 @@ Class zaux.rBAM.Operation Extends (EnsLib.REST.Operation, zaux.rBAM.Utils) [ Lan
 
 Parameter INVOCATION = "Queue";
 
-Parameter SETTINGS = "CallInterval:REST Output,StructuredOutput:REST Output,SkipEmptyJSON:REST Output,ServiceClassNames:REST Output:selector?multiSelect=1&context={Ens.ContextSearch/ProductionItems?services=1&productionName=@productionId&className=Ens.BusinessMetric},ClassNamePrefix:REST Output,HideMetrics:REST Output";
+Parameter SETTINGS = "CallInterval:REST Output,StructuredOutput:REST Output,IncludeMetricParameters:REST Output,SkipEmptyJSON:REST Output,ServiceClassNames:REST Output:selector?multiSelect=1&context={Ens.ContextSearch/ProductionItems?services=1&productionName=@productionId&className=Ens.BusinessMetric},ClassNamePrefix:REST Output,HideMetrics:REST Output";
 
 /// Identify this productions BusinessMetrics that will be interrogated for their most recent metric values
 Property ServiceClassNames As %String(MAXLEN = 1000) [ MultiDimensional ];
@@ -27,7 +27,7 @@ Property ServiceClassNames As %String(MAXLEN = 1000) [ MultiDimensional ];
 /// This setting applies when only one BusinessMetric class is used, or when metric names are unique across multiple BusinessMetric Classes 
 Property ClassNamePrefix As %Boolean [ InitialExpression = 0 ];
 
-/// Comma separated list of Business Metric Property names to avoid from all output.<br/> 
+/// Case-Sensitive, Comma separated list of Business Metric Property names to avoid from all output.<br/> 
 /// May specify BusinessMetric ClassName, Instance name and or MetricPropertyName </br>
 /// Format:  [BusinessComponentName]:[Instance]:[MetricProperty],.. <br>
 /// <p>
@@ -35,6 +35,10 @@ Property ClassNamePrefix As %Boolean [ InitialExpression = 0 ];
 /// 		 ":North:totalRevenue"
 /// 
 Property HideMetrics As %String(MAXLEN = 2500);
+
+/// if TRUE, include metric parameters (like RANGEUPPER/LOWER, UNITS and THRESHOLDUPPER/LOWER) as part of JSON data. </br>
+/// The default is FALSE.
+Property IncludeMetricParameters As %Boolean;
 
 Property intHideArr As %String [ MultiDimensional, Private ];
 
@@ -47,6 +51,8 @@ Property intHideArr As %String [ MultiDimensional, Private ];
 // 		"_Production" :"AAAAA555555",
 // 		"_SampledDateTime" :"AAAAA555555",
 // 		"zaux.bs.SampleMetrics_City" :"AAAAA555555",
+// 		"zaux.bs.SampleMetrics_[Lat-RANGELOWER]":10,
+// 		"zaux.bs.SampleMetrics_[Lat-RANGEUPPER]":99,
 // 		"zaux.bs.SampleMetrics_Lat" :"AAAAA555555",
 // 		"zaux.bs.SampleMetrics_Long" :"AAAAA555555",
 // 		"zaux.bs.SampleMetrics_TwitterMentions" :"98.6"
@@ -70,22 +76,33 @@ Property intHideArr As %String [ MultiDimensional, Private ];
 // 								 {"City" :"AAAAA555555"},
 // 								 {"Lat" :"AAAAA555555"},
 // 								 {"Long" :"AAAAA555555"},
-// 								 {"TwitterMentions" :"98.6"}
-// 									 {"HiLowTemp":[
-// 												   {"key":"Low","value":"13"},
-// 												   {"key":"High","value":"26"}
-// 												  ]
-// 									 {"AirQuality":[
-// 												   {"key":"1","value":"106"},
-// 												   {"key":"2","value":"102"},
-// 												   {"key":"3","value":"103"},
-// 												  ]
-// 									 }
-// 								]
-// 						}
-// 						]	
+// 								 {"TwitterMentions" :"98.6"},
+// 								 {"HiLowTemp":[
+// 											   {"key":"Low","value":"13"},
+// 											   {"key":"High","value":"26"}
+// 											  ]},
+// 								 {"AirQuality":[
+// 											   {"key":"1","value":"106"},
+// 											   {"key":"2","value":"102"},
+// 											   {"key":"3","value":"103"},
+// 											  ]}
+// 								 ]}
+// 					]	
+// 	    "MetricProperties":[ 
+//		       { 
+//		          "Metric":"AirQuality",
+//		          "RANGELOWER":"0",
+//		          "RANGEUPPER":"100",
+//		          "THRESHOLDLOWER":"0",
+//		          "THRESHOLDUPPER":"100",
+//		          "UNITS":""
+//		       },
+//			   {
+//      	  ... 
+//		       }
+//		]
 // 	}
-// ]
+//  ]
 // 
 // for BusinessMetrics with multiple instances, the element "instances" will include a json property "instanceName" (in the structured
 // output) and be part of the json property name in the non-structured output format.
@@ -111,7 +128,7 @@ Parameter DEBUG As %Boolean = 1;
 Method OnKeepalive(pAdapterStatus As %Status) As %Status
 {
 	set tSC=$$$OK
-	set metricData=$zdt($h,3)
+	set metricData=..getSampleTime()
 	try
 	{
 		merge intHideArr=..intHideArr
@@ -121,22 +138,13 @@ Method OnKeepalive(pAdapterStatus As %Status) As %Status
 			set Hostname=$piece(..ServiceClassNames,",",i) 
 			continue:Hostname=""
 			
-			// hide all metrics of given business class  ?
-			if $d(intHideArr(Hostname,"*","*")) continue
-			
 			continue:'##class(Ens.Director).IsItemEnabled(Hostname,.status)
 			merge metricData(Hostname)=$$$EnsMetrics(Hostname) 
 			
-			// hide all metrics of business class,instance combination
-			set inst=""
-			for  {
-				set inst=$order(metricData(Hostname,inst)) quit:inst=""
-				if $d(intHideArr(Hostname,inst,"*")) kill metricData(Hostname,inst)
-			}
 		} 
 		
 		// Build JSON for measures
-		$$$THROWONERROR(tSC,..buildJSON(.metricData,..StructuredOutput,..DelimeterForFlattenedData,..ClassNamePrefix,.intHideArr, .json))
+		$$$THROWONERROR(tSC,..buildJSON(.metricData,..StructuredOutput,..IncludeMetricParameters,..DelimeterForFlattenedData,..ClassNamePrefix,.intHideArr, .json))
 		  
 		;# Write JSON to foreground for now
 		if $d(json),$isObject(json) {
@@ -157,10 +165,15 @@ Method OnKeepalive(pAdapterStatus As %Status) As %Status
 	} catch ex {
 		set tSC=ex.AsStatus()
 	}
+	
 	if $$$ISERR(tSC) {
-		if ..#DEBUG write !,$System.Status.DisplayError(tSC) 
-		quit tSC
+		if ..#DEBUG write !,$System.Status.DisplayError(tSC)
+		if ..#DEBUG,$d(tHttpResponse) {
+			write !,tHttpResponse.Data.OutputToDevice()
+		} 
 	}
+    
+    if tSC'=$$$OK quit tSC
     
 	quit ##super(pAdapterStatus)
 }
@@ -170,8 +183,8 @@ Method OnInit() As %Status
 {
 	set ..Adapter.KeepaliveInterval=..CallInterval
 	
-	do ..buildHideArray(..HideMetrics,.intHideArr)
-	merge ..intHideArr=intHideArr
+	// populate internal multi-dimensional property of metrics to ommit from view  
+	do ..buildHideArray(..HideMetrics,.intHideArr)	merge ..intHideArr=intHideArr
 	
 	Quit $$$OK
 }

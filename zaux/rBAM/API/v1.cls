@@ -63,7 +63,7 @@ ClassMethod GetMetricClassData(namespace, metricHostName = "") As %Status
 	set metricData=$zdt($h,3)
 	try
 	{
-		do ..getParams(.StructuredOutput,.DelimeterForFlattenedData,.OmmitClassName,.HideMetricsString)
+		do ..getParams(.StructuredOutput,.IncludeMetricParameters,.DelimeterForFlattenedData,.OmmitClassName,.HideMetricsString)
 		if HideMetricsString'="" {
 			do ..buildHideArray(HideMetricsString,.intHideArr)
 		} 
@@ -73,9 +73,9 @@ ClassMethod GetMetricClassData(namespace, metricHostName = "") As %Status
 		} else {  
 			
 			set class=##class(zaux.rBAM.Utils).resolveClassName(metricHostName)
-			if '##class(%Dictionary.CompiledClass).%ExistsId(class) {
+			if class=""!('##class(%Dictionary.CompiledClass).%ExistsId(class)) {
 				// class not found or not enabled
-				$$$ThrowStatus($$$ERROR($$$GeneralError,metricHostName_" is not found, or not enabled to run."))
+				$$$ThrowStatus($$$ERROR($$$GeneralError,"Metric class: "_metricHostName_" not found, or not enabled to run."))
 			} else {
 				set hostList(1)=metricHostName
 			}
@@ -88,22 +88,13 @@ ClassMethod GetMetricClassData(namespace, metricHostName = "") As %Status
 			set c=$order(hostList(c)) quit:c=""
 			set metricHostName=hostList(c)
 
-			// specifically hide all metrics of given business class  ?
-			if $d(intHideArr(metricHostName,"*","*")) continue
-			
 			merge metricData(metricHostName)=$$$EnsMetrics(metricHostName)
-			 
-			// hide all metrics of business class+instance combination
-			set inst=""
-			for  {
-				set inst=$order(metricData(metricHostName,inst)) quit:inst=""
-				if $d(intHideArr(metricHostName,inst,"*")) kill metricData(metricHostName,inst)
-			}			
+		
 		}
 		
 		
 		// Build JSON for measures
-		$$$THROWONERROR(tSC,..buildJSON(.metricData,StructuredOutput,DelimeterForFlattenedData,OmmitClassName,.intHideArr,.json))
+		$$$THROWONERROR(tSC,..buildJSON(.metricData,StructuredOutput,IncludeMetricParameters,DelimeterForFlattenedData,OmmitClassName,.intHideArr,.json))
 			  
 		;# Write JSON to foreground for now
 		if $d(json),$isObject(json) {
@@ -124,9 +115,10 @@ ClassMethod GetMetricClassData(namespace, metricHostName = "") As %Status
 	quit $$$OK
 }
 
-ClassMethod getParams(StructuredOutput, DelimeterForFlattenedData,OmmitClassName,HideMetrics)
+ClassMethod getParams(StructuredOutput, IncludeMetricParameters,DelimeterForFlattenedData,OmmitClassName,HideMetrics)
 {
 	set StructuredOutput=$GET(%request.Data("StructuredOutput",1),0)
+	set IncludeMetricParameters=$GET(%request.Data("IncludeMetricParameters",1),0)
 	set DelimeterForFlattenedData=$GET(%request.Data("DelimeterForFlattenedData",1),"_")
 	set OmmitClassName=$GET(%request.Data("OmmitClassName",1),0)
 	set HideMetrics=$GET(%request.Data("HideMetrics",1),"")
