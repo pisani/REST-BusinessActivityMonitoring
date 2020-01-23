@@ -14,8 +14,7 @@ Property CO2Level as Ens.DataType.Metric(UNITS = "ppm",RANGEUPPER=600,RANGELOWER
 /// Calculate and update the set of metrics for this class
 /// This method is just a sample, and generates random values (not using real data) only for demo purposes.
 Method OnCalculateMetrics() As %Status
-{
-	/// 
+{ 
 	/// In the absence of a table with real data random value are being populated for demo purposes
 		
 	/// Single metrics: get last temp recorded
