@@ -1,9 +1,10 @@
 /// TODO: 
-/// 4. Create API as %zaux.rBAM.API for CACHELIB install. Document appropriatly
+/// 4. Create API as %zaux.rBAM.API for CACHELIB install - which does not use {namespace} ? or keep namespace specific ?. Document appropriatly
 /// 5. remove debug flag. 
 /// 8. Wildcard for MetricClass in HideMEtrics ?
 /// 8. need BEtter Sample.Metrics example to be able to plot (1) Line Chart (time-based values), Gauges and bar chart (catogry based values)
 /// if HTTP Error, disable operation otherwise Event Log fills up !!
+/// 10. Change COMMENT LINES showing JSON output in this class. 
 /// 98. Make github repository public !
 /// 99. Complete Documentation and Post !
 /// This Business Operation sends, over HTTP using REST (POST) the values of one or more Business Metric classes.
@@ -14,7 +15,7 @@ Class zaux.rBAM.Operation Extends (EnsLib.REST.Operation, zaux.rBAM.Utils) [ Lan
 
 Parameter INVOCATION = "Queue";
 
-Parameter SETTINGS = "CallInterval:REST Output,StructuredOutput:REST Output,IncludeMetricParameters:REST Output,SkipEmptyJSON:REST Output,ServiceClassNames:REST Output:selector?multiSelect=1&context={Ens.ContextSearch/ProductionItems?services=1&productionName=@productionId&className=Ens.BusinessMetric},ClassNamePrefix:REST Output,HideMetrics:REST Output";
+Parameter SETTINGS = "CallInterval:REST Output,StructuredOutput:REST Output,MetricParameters:REST Output,SkipEmptyJSON:REST Output,ServiceClassNames:REST Output:selector?multiSelect=1&context={Ens.ContextSearch/ProductionItems?services=1&productionName=@productionId&className=Ens.BusinessMetric},ClassNamePrefix:REST Output,HideMetrics:REST Output,PathForDebugFile:REST Output";
 
 /// Identify this productions BusinessMetrics that will be interrogated for their most recent metric values
 Property ServiceClassNames As %String(MAXLEN = 1000) [ MultiDimensional ];
@@ -37,8 +38,11 @@ Property ClassNamePrefix As %Boolean [ InitialExpression = 0 ];
 Property HideMetrics As %String(MAXLEN = 2500);
 
 /// if TRUE, include metric parameters (like RANGEUPPER/LOWER, UNITS and THRESHOLDUPPER/LOWER) as part of JSON data. </br>
-/// The default is FALSE.
-Property IncludeMetricParameters As %Boolean;
+/// The default is FALSE. Currently, iether all metric parameters are expressed for all metrics, or, none at all.
+Property MetricParameters As %Boolean;
+
+/// a file path that can be ussed to received a file JSONPostData.txt, representing the most recent data being distributed over HTTP
+Property PathForDebugFile as %String;
 
 Property intHideArr As %String [ MultiDimensional, Private ];
 
@@ -129,6 +133,9 @@ Method OnKeepalive(pAdapterStatus As %Status) As %Status
 {
 	set tSC=$$$OK
 	set metricData=..getSampleTime()
+	
+	if ..#DEBUG set formatter=##class(%JSON.Formatter).%New()
+	
 	try
 	{
 		merge intHideArr=..intHideArr
@@ -144,7 +151,7 @@ Method OnKeepalive(pAdapterStatus As %Status) As %Status
 		} 
 		
 		// Build JSON for measures
-		$$$THROWONERROR(tSC,..buildJSON(.metricData,..StructuredOutput,..IncludeMetricParameters,..DelimeterForFlattenedData,..ClassNamePrefix,.intHideArr, .json))
+		$$$THROWONERROR(tSC,..buildJSON(.metricData,..StructuredOutput,..MetricParameters,..DelimeterForFlattenedData,..ClassNamePrefix,.intHideArr, .json))
 		  
 		;# Write JSON to foreground for now
 		if $d(json),$isObject(json) {
@@ -153,13 +160,16 @@ Method OnKeepalive(pAdapterStatus As %Status) As %Status
 			if $tr(json.%ToJSON(),"[{}]","")=""&&(..SkipEmptyJSON) set skip=1
 			
 			if ..#DEBUG {
-				write !,$select(skip:"Skipping ",1:"Sending ")_"Metric data as: ",!
-				write !,json.%ToJSON(),!
+				write !,$select(skip:"Skipping ",1:"Sending ")_"Metric data as: ",! 
+				do formatter.FormatToStream(json,.formattedStream)
+				do formattedStream.OutputToDevice() 
+				write !
 			}
 			
 			; Call HTTP Post
   			if 'skip $$$THROWONERROR(tSC,..Adapter.Post(.tHttpResponse,,json.%ToJSON()))
   			
+  			if ..PathForDebugFile'="" do ..CreateJSONPostData(json)
   		}
 		
 	} catch ex {
@@ -176,6 +186,26 @@ Method OnKeepalive(pAdapterStatus As %Status) As %Status
     if tSC'=$$$OK quit tSC
     
 	quit ##super(pAdapterStatus)
+}
+
+Method CreateJSONPostData(json) {
+
+	quit:'##class(%File).DirectoryExists(..PathForDebugFile)
+	
+	set dir=..PathForDebugFile,filename=##class(%File).NormalizeDirectory("JSONPostData.txt",dir)
+	set file=##class(%File).%New(filename)
+	do file.Open("WNS")
+	do file.WriteLine("HTTP Server: "_..Adapter.HTTPServer)
+	do file.WriteLine("HTTP Port: "_..Adapter.HTTPPort)
+	do file.WriteLine("HTTP URL: "_..Adapter.URL)
+	do file.WriteLine("SSL Credentials: "_..Adapter.Credentials)
+	do file.WriteLine("")
+	set formatter=##class(%JSON.Formatter).%New()
+	do formatter.FormatToStream(json,.formattedStream)
+	do file.CopyFrom(formattedStream) 
+
+	do file.%Save()
+
 }
 
 /// This user callback method is called via initConfig() from %OnNew() or in the case of SOAP Services from OnPreSOAP()

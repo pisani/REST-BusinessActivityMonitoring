@@ -12,13 +12,13 @@ Parameter DefaultContentType As %String = "application/fhir+json";
 XData UrlMap
 {
 <Routes>
-<Route Url="/:namespace/Data"					Method="GET" 		Call="GetMetricClassData"/>
-<Route Url="/:namespace/Data/:metricHostName"	Method="GET" 		Call="GetMetricClassData"/>
-<Route Url="/:namespace/List"					Method="GET" 		Call="GetMetricClasses"/>
+<Route Url="/Data"					Method="GET" 		Call="GetMetricClassData"/>
+<Route Url="/Data/:metricHostName"	Method="GET" 		Call="GetMetricClassData"/>
+<Route Url="/List"					Method="GET" 		Call="GetMetricClasses"/>
 </Routes>
 }
 
-ClassMethod GetMetricClasses(namespace) As %Status
+ClassMethod GetMetricClasses() As %Status
 {
 	set tSC=$$$OK
 	try {
@@ -57,7 +57,7 @@ ClassMethod GetMetricClasses(namespace) As %Status
 	quit $$$OK
 }
 
-ClassMethod GetMetricClassData(namespace, metricHostName = "") As %Status
+ClassMethod GetMetricClassData( metricHostName = "") As %Status
 {
 	set tSC=$$$OK
 	set metricData=$zdt($h,3)
@@ -118,7 +118,7 @@ ClassMethod GetMetricClassData(namespace, metricHostName = "") As %Status
 ClassMethod getParams(StructuredOutput, IncludeMetricParameters,DelimeterForFlattenedData,OmmitClassName,HideMetrics)
 {
 	set StructuredOutput=$GET(%request.Data("StructuredOutput",1),0)
-	set IncludeMetricParameters=$GET(%request.Data("IncludeMetricParameters",1),0)
+	set IncludeMetricParameters=$GET(%request.Data("MetricParameters",1),0)
 	set DelimeterForFlattenedData=$GET(%request.Data("DelimeterForFlattenedData",1),"_")
 	set OmmitClassName=$GET(%request.Data("OmmitClassName",1),0)
 	set HideMetrics=$GET(%request.Data("HideMetrics",1),"")

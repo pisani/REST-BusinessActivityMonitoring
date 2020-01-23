@@ -3,14 +3,14 @@ Class zaux.rBAM.Utils Extends %RegisteredObject
 
 /// This is the core method that generates JSON for metrics being captured by a producion.
 /// metricData 				- Array of metric readings captured from ^IRIS.Temp.EnsMetrics in the form of:
-///							  metricData(<hostName>,<instanceName or 1>,<metricPropertyName>,<AutoHistoryNumber or Multi-Dimensional subscript>)					 
+/// 							  metricData(<hostName>,<instanceName or 1>,<metricPropertyName>,<AutoHistoryNumber or Multi-Dimensional subscript>)					 
 /// StructuredOutput		- 0/1 for a 'flat', single level JSON object, or multi-level structured JSON output format
 /// IncludeMetricParameters	- 0/1 defining whether to hide/show RANGEUPPER, RANGELOWER, etc metric property parameters
 /// DelimeterForFlatData	- Delimeter (single character) to use when generating the non-Structured format of JSON data
 /// OmmitClassName			- 0/1 define whether to include/exclude MetricClassName when generating the non-Structured format of JSON data
 /// %HideArraMap			- Array of metricClass,instance,metricProperty names to hide from output, for the purposes of hiding specific metricProperties.
 /// json					- generated JSON Object of metric data.
-ClassMethod buildJSON(metricData, StructuredOutput=0, IncludeMetricParameters=0,DelimeterForFlatData="-",OmmitClassName=1, %HideArrMap, Output json As %DynamicObject) As %Status
+ClassMethod buildJSON(metricData, StructuredOutput = 0, IncludeMetricParameters = 0, DelimeterForFlatData = "-", OmmitClassName = 1, %HideArrMap, Output json As %DynamicObject) As %Status
 {
 	kill json
 	set tSC=$$$OK 
@@ -62,7 +62,7 @@ ClassMethod buildJSON(metricData, StructuredOutput=0, IncludeMetricParameters=0,
 			}
 						 
 			Set tSC = ..getPropertiesForDataSource(tMetricClassName,IncludeMetricParameters,.pProperties)
-							
+										
 			set i="",p="" 
 			if StructuredOutput=0 {				
 				set attMetric=tMetricHostname_del if OmmitClassName set attMetric=""
@@ -90,11 +90,15 @@ ClassMethod buildJSON(metricData, StructuredOutput=0, IncludeMetricParameters=0,
 						}
 						
 						// add property parameters
+						// TODO: smarter way if including/excluding metric parameters
+						// do ..addRemoveMetricParameters(StructuredOutput,IncludeMetricParameters,.pProperties,.data,attMetric)
+						
 						set meta=""
 						for  {
 							set meta=$order(pProperties(p,meta)) quit:meta=""
 							do data.%Set(attMetric_pProperties(p)_"("_meta_")",pProperties(p,meta))
 						}
+						
 						
 					}
 				}
@@ -117,25 +121,8 @@ ClassMethod buildJSON(metricData, StructuredOutput=0, IncludeMetricParameters=0,
 					
 					if flgMultiInstance {
 						set instance.instanceName=ins(i)
-					}
-					
-					if IncludeMetricParameters {
-						set metricProperties=[],p=""
-						for  { 
-							set p=$order(pProperties(p)) quit:p="" 
+					}		
 						
-							// add property parameters
-							set meta=""
-							set metricProp={}
-							set metricProp.Metric=pProperties(p)
-							for  {
-								set meta=$order(pProperties(p,meta)) quit:meta=""
-								do metricProp.%Set(meta,pProperties(p,meta))
-							}
-							do metricProperties.%Push(metricProp)			
-						}
-					}
-					
 					// add values.	
 					set metrics=[],p=""
 					for  { 
@@ -172,7 +159,27 @@ ClassMethod buildJSON(metricData, StructuredOutput=0, IncludeMetricParameters=0,
 					}
 				}
 				
-				if IncludeMetricParameters set data.metricProperties= metricProperties
+				// TODO: smarter way if including/excluding metric parameters
+				// do ..addRemoveMetricParameters(StructuredOutput,IncludeMetricParameters,.pProperties,.metricProperties)
+					
+				if IncludeMetricParameters {
+					set p="",metricProperties=[]
+					for  { 
+						set p=$order(pProperties(p)) quit:p="" 
+					
+						// add property parameters
+						set meta=""
+						set metricProp={}
+						set metricProp.Metric=pProperties(p)
+						for  {
+							set meta=$order(pProperties(p,meta)) quit:meta=""					
+							do metricProp.%Set(meta,pProperties(p,meta))
+						}
+						do metricProperties.%Push(metricProp)
+					}
+					set data.metricProperties=metricProperties			
+				}
+				
 				do json.%Push(data)
 			}
 		}
@@ -183,18 +190,19 @@ ClassMethod buildJSON(metricData, StructuredOutput=0, IncludeMetricParameters=0,
 		set tSC=ex.AsStatus() 
 	}
 	
-	set tSC=..OnBuildJSON(.json)
+	if tSC set tSC=..OnBuildJSON(.json,.pProperties)
 	quit tSC
 }
 
-classMethod getSampleTime() as %String {
+ClassMethod getSampleTime() As %String
+{
 
 	set st=$zdt($h,3,,3)
 	set st=$tr(st," ","T")
 	quit st
-	
 }
-ClassMethod getPropertiesForDataSource(pDataSource As %String,IncludeMetricParameters, Output pProperties ) As %Status
+
+ClassMethod getPropertiesForDataSource(pDataSource As %String, IncludeMetricParameters, Output pProperties) As %Status
 {
 	Set tSC = $$$OK
 	Try {
@@ -208,6 +216,7 @@ ClassMethod getPropertiesForDataSource(pDataSource As %String,IncludeMetricParam
 			
 			set n=n+1,pProperties(n)=prop.Name
 			continue:'IncludeMetricParameters
+			
 			for meta="UNITS","RANGEUPPER","RANGELOWER","THRESHOLDUPPER","THRESHOLDLOWER" {
 				set pProperties(n,meta)=prop.Parameters.GetAt(meta)
 			}
@@ -221,7 +230,8 @@ ClassMethod getPropertiesForDataSource(pDataSource As %String,IncludeMetricParam
 
 /// take user-specified configuration sting of metric data to hide, and turn it
 /// into a 3-dimensional array to be used during the data collection/projection phase.
-ClassMethod buildHideArray(HideMetricsString,intHideArr) {
+ClassMethod buildHideArray(HideMetricsString, intHideArr)
+{
  
 	kill intHideArr
 	for x=1:1:$l(HideMetricsString,",") { 
@@ -233,28 +243,86 @@ ClassMethod buildHideArray(HideMetricsString,intHideArr) {
 		set:i="" i="*"
 		set:m="" m="*"
 		set intHideArr(c,i,m)=""
-	}	
+	}
 }
 
-ClassMethod hide(class="*",instance="*",property="*") as %Boolean {
+ClassMethod hide(class = "*", instance = "*", property = "*") As %Boolean
+{
 	
 	quit:$d(%HideArrMap("*","*",property)) 1
 	quit:$d(%HideArrMap("*",instance,property)) 1
 	quit:$d(%HideArrMap(class,instance,property)) 1
 	
 	quit 0
-	}
+}
 
-ClassMethod resolveClassName(itemName) as %String 
-{ 
+ClassMethod resolveClassName(itemName) As %String
+{
+ 
 	set configItem=##class(Ens.Config.Production).OpenItemByConfigName(itemName)
 	if $IsObject(configItem) quit configItem.ClassName
 	quit ""
 }
 
+// Work in progress:
+ClassMethod addRemoveMetricParameters(OutputFormat, pProperties, Output metricProperties As %DynamicObject, attMetric)
+{
+					
+					// $ALL; {p}:RTU; 
+					/*
+						if +
+
+						set imp("$ALL")=""
+						set imp("+","AirQuality")="RT"
+						set imp("-","AverageTemp")="U"
+						
+						RT; -Air*:r;-
+					*/
+											
+					set p=""
+					for  { 
+						set p=$order(pProperties(p)) quit:p="" 
+					
+						// add property parameters
+						set meta=""
+						set metricProp={}
+						set metricProp.Metric=pProperties(p)
+						for  {
+							set meta=$order(pProperties(p,meta)) quit:meta=""
+							if $d(imp("$ALL$")) {
+								if $d(imp("-",p)) {
+									set remove=imp("-",p)
+									for i=1:1:$l(remove) { 
+										if $zconvert($e(remove,i),"U")'[$zconvert($e(meta),"U") {do metricProp.%Set(meta,pProperties(p,meta))}
+											}
+								}	
+							} elseif $d(imp("$NONE$")) {
+								if $d(imp("+",p)) {
+									set remove=imp("+",p)
+									for i=1:1:$l(remove) { 
+										if $zconvert($e(remove,i),"U")[$zconvert($e(meta),"U") {do metricProp.%Set(meta,pProperties(p,meta))}
+									}
+								}								
+							} else {
+								if $d(imp("+",p)) {
+									set remove=imp("+",p)
+									for i=1:1:$l(remove) { 
+										if $zconvert($e(remove,i),"U")[$zconvert($e(meta),"U") {do metricProp.%Set(meta,pProperties(p,meta))}
+									}
+								}								
+							}
+							//do metricProp.%Set(meta,pProperties(p,meta))
+						}
+						do metricProperties.%Push(metricProp)			
+					}
+}
+
 /// Called after normal compilation of JSON body just before sending result.
-ClassMethod OnBuildJSON(json as %Library.DynamicObject) as %Status {
+/// pProperties is an array of metric property names and included meta tags.
+ClassMethod OnBuildJSON(json As %Library.DynamicObject, pProperties) As %Status
+{
 	
 	quit $$$OK
 }
-} 
+
+}

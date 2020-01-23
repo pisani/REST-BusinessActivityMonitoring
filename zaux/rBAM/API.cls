@@ -15,26 +15,7 @@ ClassMethod OnPreDispatch(pUrl As %String, pMethod As %String, ByRef pContinue A
 	Set tSC = $$$OK
 	Try { 
 		
-		// Insist that the first piece of the url is a version
-		Set tVersion = $Piece(pUrl,"/",2)
-		If ("v1"'[tVersion) {
-			Set tSC = $$$ERROR($$$GeneralError,"Version "_ tVersion_" is not supported by this api")
-			Quit
-		}
-		
-		// Insist that the second piece of the url is a valid namespace and switch to it
-		Set tNamespace=$Piece(pUrl,"/",3)
-		
-		// Ensure that the specified namespace exists and is enabled
-		If (tNamespace="") || '##class(%SYS.Namespace).Enabled(tNamespace) {
-			Set tSC = $$$ERROR($$$GeneralError,"Invalid namespace provided")
-			Quit
-		}
-		
-		// Prefer changing into the appropriate namespace here
-		If (tNamespace'=$namespace) Set $namespace=tNamespace
-		
-		// Set the return type according to the Accept type in the request. Default is application/json.
+		// Set the return type according to the Accept type in the request. must be application/json.
 		If ('..AcceptsContentType(..#CONTENTTYPEJSON)) {
 			Set tSC=..ReportHttpStatusCode(..#HTTP406NOTACCEPTABLE),pContinue=0
 			Quit 
@@ -43,18 +24,29 @@ ClassMethod OnPreDispatch(pUrl As %String, pMethod As %String, ByRef pContinue A
 			// This always returns json
 			Set %response.ContentType=..#CONTENTTYPEJSON
         }
-
-		// De-escalate privileges back to the user's login privileges now that 
-		// namespace redirection is complete
-		$$$ResetToLoginRoles
-	}
-	Catch ex {
+		
+		// Insist that the first piece of the url is a version
+		Set tVersion = $Piece(pUrl,"/",2)
+		If ("v1"'[tVersion) {
+			Set tSC = $$$ERROR($$$GeneralError,"Version "_ tVersion_" is not supported by this api.")
+			Quit
+		}
+				
+		set pProductionName = ##class(Ens.Director).GetActiveProductionName()
+		if pProductionName  ="" Set tSC = $$$ERROR($$$GeneralError,"No active Integration Production found in Namespace "_namespace) quit
+		
+		if '##class(Ens.Director).IsProductionRunning(pProductionName) {
+			Set tSC = $$$ERROR($$$GeneralError,"Active Integration Production "_pProductionName_" is not running right now.") quit
+		}
+		
+	} Catch ex {
 		Set tSC = ex.AsStatus()
 	}
 	
 	If $$$ISERR(tSC) {
 		Set pContinue = 0 
-		do ..StatusToJSON(tSC)
+		do ..StatusToJSON(tSC,.errJSON)
+		do errJSON.%ToJSON()
 	}
 
 	Quit $$$OK
