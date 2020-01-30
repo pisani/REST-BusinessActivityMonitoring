@@ -1,15 +1,5 @@
-/// TODO: 
-/// 4. Create API as %zaux.rBAM.API for CACHELIB install - which does not use {namespace} ? or keep namespace specific ?. Document appropriatly
-/// 5. remove debug flag. 
-/// 8. Wildcard for MetricClass in HideMEtrics ?
-/// 8. need BEtter Sample.Metrics example to be able to plot (1) Line Chart (time-based values), Gauges and bar chart (catogry based values)
-/// if HTTP Error, disable operation otherwise Event Log fills up !!
-/// 10. Change COMMENT LINES showing JSON output in this class. 
-/// 98. Make github repository public !
-/// 99. Complete Documentation and Post !
 /// This Business Operation sends, over HTTP using REST (POST) the values of one or more Business Metric classes.
 /// set to run in this production.
-/// 
 Class zaux.rBAM.Operation Extends (EnsLib.REST.Operation, zaux.rBAM.Utils) [ Language = objectscript ]
 {
 
@@ -42,7 +32,7 @@ Property HideMetrics As %String(MAXLEN = 2500);
 Property MetricParameters As %Boolean;
 
 /// a file path that can be ussed to received a file JSONPostData.txt, representing the most recent data being distributed over HTTP
-Property PathForDebugFile as %String;
+Property PathForDebugFile As %String;
 
 Property intHideArr As %String [ MultiDimensional, Private ];
 
@@ -116,7 +106,10 @@ Property intHideArr As %String [ MultiDimensional, Private ];
 /// If false, the JSON body will be structured with a collection of Business Metrics, that wraps a collection of Instances, and then Metrics in a more structured format.
 Property StructuredOutput As %Boolean [ InitialExpression = 0 ];
 
-/// Time (in seconds) to wait before checking Metric values from the Business Metric classes defined
+/// Time (in seconds) to wait before checking recently collected Metric values from the Business Metric classes defined <br>
+/// and posting to a REST endpoint. </br>
+/// A value of 0 - means do not regularly collect and post. This will be used in conjunction with <br>
+/// the ad-hoc, manual posting of metrics when the Business Operation reveives a Message (Ens.StringRequest) with a metric Host Name. 
 Property CallInterval As %Integer [ InitialExpression = 5 ];
 
 Property DelimeterForFlattenedData As %String [ InitialExpression = "_" ];
@@ -124,15 +117,51 @@ Property DelimeterForFlattenedData As %String [ InitialExpression = "_" ];
 /// Don't send JSON if JSON is empty.
 Property SkipEmptyJSON As %Boolean [ InitialExpression = 1 ];
 
-Parameter DEBUG As %Boolean = 1;
+Parameter DEBUG As %Boolean = 0;
+
+/// used to avoid re-posting data, if previous cycle failed.
+Property ErrorStatus As %Boolean;
 
 /// This method will be called within KeepaliveInterval of the last return from OnTask() or OnKeepalive().
 /// It is called via the Adapter's OnKeepalive() method, which is called from the Host.OnTask() method;
 /// if there is no Adapter there is no keepalive call.
-Method OnKeepalive(pAdapterStatus As %Status) As %Status
+Method OnKeepalive(pAdapterStatus As %Status, ServiceClassNames = "") As %Status
+{
+	
+	set tSC=$$$OK
+	try {
+		if '..ErrorStatus set tSC=..CollectAndPostData(ServiceClassNames)
+		
+	} catch ex {
+		set tSC=ex.AsStatus()
+	}
+	if tSC'=$$$OK quit ##super(tSC)
+     
+	quit ##super(pAdapterStatus)
+}
+
+Method PostMetricData(pRequest As Ens.StringRequest, Output pResponse As Ens.StringResponse) As %Status
+{
+	set tSC=$$$OK
+	
+	try {
+		set ServiceClassNames=pRequest.StringValue
+		set tSC=..CollectAndPostData(ServiceClassNames,1)
+			
+	} catch ex {
+		set tSC=ex.AsStatus()
+	}
+	
+	quit tSC
+}
+
+Method CollectAndPostData(ServiceClassNames = "", MessageDriven = 0) As %Status
 {
 	set tSC=$$$OK
 	set metricData=..getSampleTime()
+	
+	set:ServiceClassNames="" ServiceClassNames=..ServiceClassNames
+	quit:ServiceClassNames="" $$$OK // nothing to do.
 	
 	if ..#DEBUG set formatter=##class(%JSON.Formatter).%New()
 	
@@ -140,9 +169,9 @@ Method OnKeepalive(pAdapterStatus As %Status) As %Status
 	{
 		merge intHideArr=..intHideArr
 		
-		for i=1:1:$l(..ServiceClassNames,",") {
+		for i=1:1:$l(ServiceClassNames,",") {
 			
-			set Hostname=$piece(..ServiceClassNames,",",i) 
+			set Hostname=$piece(ServiceClassNames,",",i) 
 			continue:Hostname=""
 			
 			continue:'##class(Ens.Director).IsItemEnabled(Hostname,.status)
@@ -181,14 +210,15 @@ Method OnKeepalive(pAdapterStatus As %Status) As %Status
 		if ..#DEBUG,$d(tHttpResponse) {
 			write !,tHttpResponse.Data.OutputToDevice()
 		} 
+		
+		/// For non-message driven postings, Comment this line out if you want Business operation to stop periodically sending data on call interval, once an error is encountered.
+		/// if 'MessageDriven set ..ErrorStatus=1
 	}
-    
-    if tSC'=$$$OK quit tSC
-    
-	quit ##super(pAdapterStatus)
+    quit tSC
 }
 
-Method CreateJSONPostData(json) {
+Method CreateJSONPostData(json)
+{
 
 	quit:'##class(%File).DirectoryExists(..PathForDebugFile)
 	
@@ -205,18 +235,27 @@ Method CreateJSONPostData(json) {
 	do file.CopyFrom(formattedStream) 
 
 	do file.%Save()
-
 }
 
 /// This user callback method is called via initConfig() from %OnNew() or in the case of SOAP Services from OnPreSOAP()
 Method OnInit() As %Status
 {
+	set ..ErrorStatus=0
 	set ..Adapter.KeepaliveInterval=..CallInterval
 	
 	// populate internal multi-dimensional property of metrics to ommit from view  
 	do ..buildHideArray(..HideMetrics,.intHideArr)	merge ..intHideArr=intHideArr
 	
 	Quit $$$OK
+}
+
+XData MessageMap
+{
+<MapItems>
+<MapItem MessageType="Ens.StringRequest">
+<Method>PostMetricData</Method>
+</MapItem>
+</MapItems>
 }
 
 }
