@@ -23,5 +23,5 @@ It is possible to import the entire package and implement both options offered h
 ```
 do $System.OBJ.LoadDir(<yourTempDir>,”ck”,,1)
 ```
-Note: this method imports all functionality, including the Sample Production and Sample Metric class. You may remove the classes not required (ex zaux.rBAM.Sample*). Please refer to the Installation section of the included [documentation](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux.rBAM.OpenExchange.pdf) to identify which classes to retain. 
+Note: this method imports all functionality, including the Sample Production and Sample Metric class. You may remove the classes not required (eg zaux.rBAM.Sample*). Please refer to the Installation section of the included [documentation](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux.rBAM.OpenExchange.pdf) to identify which classes to retain. 
 
