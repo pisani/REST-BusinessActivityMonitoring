@@ -2,6 +2,8 @@
 
 This code extends on the Business Activity Monitoring features natively available with InterSystems IRIS’s integration framework. 
 
+[![](https://img.shields.io/badge/InterSystems-IRIS-blue.svg)](https://www.intersystems.com/products/intersystems-iris/)
+
 ## Features:
 * Capture and push (using HTTP POST) business metric values to a nominated REST endpoint. 
 This is useful if you want to capture metrics and update a remote system. For example – using this feature one can push the metric values to a Power BI Streaming dataset which can be then consumed by Microsoft Power BI Dashboards for real-time visualization in that framework.
