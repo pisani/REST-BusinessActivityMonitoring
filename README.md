@@ -1,3 +1,4 @@
+# REST Business Activity Monitoring extension
 
 This code extends on the Business Activity Monitoring features available with InterSystems IRIS’s integration framework. 
 
@@ -8,7 +9,7 @@ This is useful if you want to capture metrics and update a remote system. For ex
 It is worth mentioning that this functionality is accomplished without needing to modify, subclass or otherwise extend any existing Business Metric class code you have. This functionality taps into the tables currently defined by IRIS, that hold the most recent calculated metric values.
 It is possible to import the entire package and implement both options offered here.
 
-Installation:
+## Installation:
 Follow the instructions outlined in the Open Exchange details section here:          xxxxxxxx
 
 Classes need to be downloaded and imported into your IRIS Namespace
@@ -16,7 +17,7 @@ If using the REST API to retrieve metric values, a WEB Applications needs to be 
 Follow the instructions in the provided documentation for a step by step setup of the above.  
 
 
-Try it out: HTTP Post to push metric data to external sources.
+## Try it out: HTTP Post to push metric data to external sources.
 Using an alternative dashboard (eg Power BI Dashboard) to plot metric data
 -	This gives you instant mobile device compatibility for the dashboard you build.
 -	This gives the ability to display multiple metrics from different IRIS Productions/Namespaces/Servers on a single Power BI dashboard
@@ -89,7 +90,7 @@ Line Chart populated from streaming dataset that’s receiving values from an IR
 4.8	Click Next and you can continue to modify the tile’s Title, Subtitle and other parameters if needed.  At this point you may continue to add more tiles, with other visualisations, and populated from the same or other IRIS data stream – or other, publicly published data streams.
 
  
-Try it out: Invoke REST API Hosted by IRIS to retrieve metric Data. 
+## Try it out: Invoke REST API Hosted by IRIS to retrieve metric Data. 
 Step 1:	Import the code and setup the Sample production
 1.1	If you haven’t already done so previously, import the zaux.rBAM.* classes into an interoperability enabled IRIS Namespace. View the production: zaux.rBAM.Sample.Production. Do not start the production yet.
 
