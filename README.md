@@ -56,7 +56,7 @@ This example will utilise the provided Sample Production and MetricClass to get 
 	- Change the following settings
 	
 | Settings                        | Content                                                                | 
-| ------------------------------- |:----------------------------------------------------------------------:| 
+| ------------------------------- | ----------------------------------------------------------------------:| 
 | HTTP Server, HTTP Port and URL  | Set these by using the URL provided my Microsoft in the previous step. |
 | SSL Certificate                 | A certificate used to adopy SSL when sending data over REST.           |
 
