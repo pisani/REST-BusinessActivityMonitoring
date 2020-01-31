@@ -38,7 +38,7 @@ This example will utilise the provided Sample Production and MetricClass to get 
 	- With your Workspace selected, refer to the top right-hand drop menu + Create,  and select Create -> Streaming Dataset
 	- Select { API }  to define a generic streaming dataset, then click NEXT.
 	- Give your Dataset a name (eg: ‘IRISStreamingDataset’), and add the values:
-
+	
 		_Production		as Text
 		_SampleDateTime		as DateTime
 		AverageTemp		as Number **
