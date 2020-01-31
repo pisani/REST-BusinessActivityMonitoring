@@ -32,6 +32,7 @@ This example will utilise the provided Sample Production and MetricClass to get 
 
 1.	Import code and setup the sample production.
 	Once installed, open and view the production zaux.rBAM.Sample.Production. Do not start the production yet.
+	
 	![image](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/images/production.png)
 	
 2.	Setup the Microsoft Power BI Streaming Dataset
@@ -46,10 +47,14 @@ This example will utilise the provided Sample Production and MetricClass to get 
 		AverageTemp		as Number **
 		```
 		** ‘AverageTemp is the only metric we are going to publish from the IRIS production.
+
+![image](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/images/MSDatasetDefinition.png)
  
 3.	Record Streaming Dataset URL
 	- Once created, Power BI will determine and provide a URL to use to supply data. In this case that will be done by IRIS.
 	- Copy the contents of this long URL.
+
+![image](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/images/MSDatasetURL.png)
 
 4.	Back in the IRIS production, configure the IRIS Business Operation
 	Some zaux.rBAM.Operation settings need to be entered. (Most of the settings that are needed for formattin the JSON body for the Microsoft Streaming Dataset (eg StructuredOutput=0), have already been set for you). (Refer to the [documentation](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/zaux.rBAM.OpenExchange.pdf) for the meaning of each configurable setting).
@@ -80,5 +85,5 @@ and pushed to the URL Provided.
 
 7.	The Power BI Dashboard tile should now be receiving data and plotting this on a line chart.
 	
-
+![image](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/images/MSDashboardTileSettings.png)
 	
