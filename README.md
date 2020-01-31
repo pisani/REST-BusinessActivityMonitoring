@@ -39,10 +39,11 @@ This example will utilise the provided Sample Production and MetricClass to get 
 	- Select { API }  to define a generic streaming dataset, then click NEXT.
 	- Give your Dataset a name (eg: ‘IRISStreamingDataset’), and add the values:
 	
+		```
 		_Production		as Text
 		_SampleDateTime		as DateTime
 		AverageTemp		as Number **
-
+		```
 		** ‘AverageTemp is the only metric we are going to publish from the IRIS production.
  
 3.	Record Streaming Dataset URL
