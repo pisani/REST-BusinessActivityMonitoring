@@ -40,9 +40,9 @@ This example will utilise the provided Sample Production and MetricClass to get 
 	- Give your dataset a name (eg: ‘IRISStreamingDataset’), and add the values:
 	
 		```
-		_Production	as Text
+		_Production		as Text
 		_SampleDateTime	as DateTime
-		AverageTemp	as Number **
+		AverageTemp		as Number **
 		```
 		** ‘AverageTemp is the only metric we are going to publish from the IRIS production.
  
