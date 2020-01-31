@@ -16,7 +16,7 @@ It is possible to import the entire package and implement both options offered h
 
 
 ## Installation:
-- Clone or download/extract the [REST-BusinessActivityMonitoring repository](https://github.com/pisani/REST-BusinessActivityMonitoring) into an empty folder on your system
+- Clone or download/extract the [REST-BusinessActivityMonitoring repository](https://github.com/pisani/REST-BusinessActivityMonitoring) into an empty temporary folder on your system
 - Open an InterSystems IRIS Terminal Window
 - Switch into a Namespace configured for interoperability.
 - Import the code into your namespace by executing execute the following command, where <yourTempDir> is the folder containing extracted  repository.(Note this imports the entire package) : 
