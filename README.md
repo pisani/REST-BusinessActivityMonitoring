@@ -45,7 +45,8 @@ This example will utilise the provided Sample Production and MetricClass to get 
 		AverageTemp		as Number **
 		```
 		** ‘AverageTemp is the only metric we are going to publish from the IRIS production.
-		Below is an illustration of what your screen should now contain:
+	
+	Below is an illustration of what you should have at the end of this step:
 
 	![image](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/images/MSDatasetDefinition.png)
  
@@ -53,7 +54,10 @@ This example will utilise the provided Sample Production and MetricClass to get 
 	- Once created, Power BI will determine and provide a URL to use to supply data. In this case that will be done by IRIS.
 	- Copy the contents of this long URL.
 
+	Below is an illustration of what you should have at the end of this step:
+	
 	![image](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/images/MSDatasetURL.png)
+
 
 4.	Back in the IRIS production, configure the IRIS Business Operation
 	Some zaux.rBAM.Operation settings need to be entered. (Most of the settings that are needed for formattin the JSON body for the Microsoft Streaming Dataset (eg StructuredOutput=0), have already been set for you). (Refer to the [documentation](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/zaux.rBAM.OpenExchange.pdf) for the meaning of each configurable setting).
@@ -83,6 +87,8 @@ and pushed to the URL Provided.
 	- Click *Next* to proceed and complete other values like Tile Title, Sub-title, etc.
 
 7.	The Power BI Dashboard tile should now be receiving data and plotting this on a line chart.
+
+	Below is an illustration of what you should have at the end of this final step:
 	
-![image](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/images/MSDashboardTileSettings.png)
+	![image](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/images/MSDashboardTileSettings.png)
 	
