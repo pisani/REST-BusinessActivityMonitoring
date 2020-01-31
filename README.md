@@ -6,7 +6,7 @@ This code extends on the Business Activity Monitoring features natively availabl
 * Capture and push (using HTTP POST) business metric values to a nominated REST endpoint. 
 This is useful if you want to capture metrics and update a remote system. For example – using this feature one can push the metric values to a Power BI Streaming dataset which can be then consumed by Microsoft Power BI Dashboards for real-time visualization in that framework.
 
-	Note that IRIS also has the capability to consume and display Business Metrics natively, but a wider range of graphical widgets to choose 	from (see: 9Business Activity Monitoring](https://docs.intersystems.com/irisforhealth20194/csp/docbook/DocBook.UI.Page.cls?KEY=EGIN_options#EGIN_options_bam). 
+	Note that IRIS also has the capability to consume and display Business Metrics natively, but a wider range of graphical widgets to choose 	from (see: [Business Activity Monitoring](https://docs.intersystems.com/irisforhealth20194/csp/docbook/DocBook.UI.Page.cls?KEY=EGIN_options#EGIN_options_bam). 
 
 * Setup a REST API as an endpoint for external systems to call in and retrieve the list of business metric classes running in a production, as well as the metric values of a one or all enabled Business Metric Classes  
 
