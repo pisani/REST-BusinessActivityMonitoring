@@ -23,7 +23,7 @@ It is possible to import the entire package and implement both options offered h
 ```
 do $System.OBJ.LoadDir(<yourTempDir>,”ck”,,1)
 ```
-Note: this method imports all functionality, including the Sample Production and Sample Metric class. You may remove the classes not required (eg zaux.rBAM.Sample*). Please refer to the Installation section of the included [documentation](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux.rBAM.OpenExchange.pdf) to identify which classes to retain. 
+Note: this method imports all functionality, including the Sample Production and Sample Metric class. You may remove the classes not required (eg zaux.rBAM.Sample*). Please refer to the Installation section of the included [documentation](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/zaux.rBAM.OpenExchange.pdf) to identify which classes to retain. 
 
 
 ## Example use case - Building Power BI Dashboard from IRIS Metric Data:
@@ -32,6 +32,7 @@ This example will utilise the provided Sample Production and MetricClass to get 
 
 1.	Import code and setup the sample production.
 	Once installed, open and view the production zaux.rBAM.Sample.Production. Do not start the production yet.
+	![image](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/images/production.png)
 	
 2.	Setup the Microsoft Power BI Streaming Dataset
 
@@ -51,7 +52,7 @@ This example will utilise the provided Sample Production and MetricClass to get 
 	- Copy the contents of this long URL.
 
 4.	Back in the IRIS production, configure the IRIS Business Operation
-	Some zaux.rBAM.Operation settings need to be entered. (Most of the settings that are needed for formattin the JSON body for the Microsoft Streaming Dataset (eg StructuredOutput=0), have already been set for you). (Refer to the [documentation](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux.rBAM.OpenExchange.pdf) for the meaning of each configurable setting).
+	Some zaux.rBAM.Operation settings need to be entered. (Most of the settings that are needed for formattin the JSON body for the Microsoft Streaming Dataset (eg StructuredOutput=0), have already been set for you). (Refer to the [documentation](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/zaux.rBAM.OpenExchange.pdf) for the meaning of each configurable setting).
 	
 	- Change the following settings
 	
