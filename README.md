@@ -30,12 +30,12 @@ Note: this method imports all functionality, including the Sample Production and
 
 This example will utilise the provided Sample Production and MetricClass to get going.
 
-## 1:	Import code and setup the sample production.
+### 1:	Import code and setup the sample production.
 	Once installed, open and view the production zaux.rBAM.Sample.Production. Do not start the production yet.
 
 	<image>
 	
-## 2:	Setup the Microsoft Power BI Streaming Dataset
+### 2:	Setup the Microsoft Power BI Streaming Dataset
 
 .	- With your Workspace selected, refer to the top right-hand drop menu + Create,  and select Create -> Streaming Dataset
 	- Select { API }  to define a generic streaming dataset, then click NEXT.
@@ -49,13 +49,13 @@ This example will utilise the provided Sample Production and MetricClass to get 
 	
 	<image>
  
-## 3:	Record Streaming Dataset URL
+### 3:	Record Streaming Dataset URL
 	- Once created, Power BI will determine and provide a URL to use to supply data. In this case that will be done by IRIS.
 	- Copy the contents of this long URL.
 
 	<image>
 
-## 4:	Configure the IRIS Business Operation
+### 4:	Configure the IRIS Business Operation
 	Back in the IRIS production, zaux.rBAM.Operation settings need to be adjusted. Most of the settings that are needed for format 	the JSON body for the Microsoft Streaming Dataset (eg StructuredOutput=0), have already been set. (Refer to the [documentation](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux.rBAM.OpenExchange.pdf) for the meaning of each configurable setting)
 	- Some settings that must change:
 		HTTP Server, HTTP Port and URL		Set these by using the URL provided my Microsoft in the previous step.
