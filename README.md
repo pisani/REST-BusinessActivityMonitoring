@@ -45,11 +45,11 @@ This example will utilise the provided Sample Production and MetricClass to get 
 
 		** ‘AverageTemp is the only metric we are going to publish from the IRIS production.
  
-### 3:	Record Streaming Dataset URL
+3.	Record Streaming Dataset URL
 	- Once created, Power BI will determine and provide a URL to use to supply data. In this case that will be done by IRIS.
 	- Copy the contents of this long URL.
 
-### 4:	Configure the IRIS Business Operation
+4.	Configure the IRIS Business Operation
 	Back in the IRIS production, zaux.rBAM.Operation settings need to be adjusted. Most of the settings that are needed for format 	the JSON body for the Microsoft Streaming Dataset (eg StructuredOutput=0), have already been set. (Refer to the [documentation](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux.rBAM.OpenExchange.pdf) for the meaning of each configurable setting)
 	- Some settings that must change:
 		HTTP Server, HTTP Port and URL		Set these by using the URL provided my Microsoft in the previous step.
