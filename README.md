@@ -29,11 +29,6 @@ Note: this method imports all functionality, including the Sample Production and
 ## Example use case - Building Power BI Dashboard from IRIS Metric Data:
 
 This example will utilise the provided Sample Production and MetricClass to get going.
-sadf
-adf
-asdf
-asdf
-asdf
 
 ### 1:	Import code and setup the sample production.
 	Once installed, open and view the production zaux.rBAM.Sample.Production. Do not start the production yet.
