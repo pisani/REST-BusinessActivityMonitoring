@@ -40,10 +40,10 @@ This example will utilise the provided Sample Production and MetricClass to get 
 	- Give your Dataset a name (eg: ‘IRISStreamingDataset’), and add the values:
 
 		_Production		as Text
-		_SampleDateTime	as DateTime
-		AverageTemp		as Number *
+		_SampleDateTime		as DateTime
+		AverageTemp		as Number **
 
-		* ‘AverageTemp is the only metric we are going to publish from the IRIS production.
+		** ‘AverageTemp is the only metric we are going to publish from the IRIS production.
  
 ### 3:	Record Streaming Dataset URL
 	- Once created, Power BI will determine and provide a URL to use to supply data. In this case that will be done by IRIS.
