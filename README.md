@@ -8,7 +8,9 @@ This is useful if you want to capture metrics and update a remote system. For ex
 * Setup a REST API as an endpoint for external systems to call in and retrieve the list of business metric classes running in a production, as well as the metric values of a one or all enabled Business Metric Classes  
 
 ```
-It is worth mentioning that this functionality is accomplished without needing to modify, subclass or otherwise extend any existing Business Metric class code you have. This functionality taps into the tables currently defined by IRIS, that hold the most recent calculated metric values.
+It is worth mentioning that this functionality is accomplished without needing to modify, subclass or otherwise extend 
+any existing Business Metric class code you have. This functionality taps into the tables currently defined by IRIS, that 
+hold the most recent calculated metric values. 
 It is possible to import the entire package and implement both options offered here.
 ```
 
