@@ -14,19 +14,14 @@ It is possible to import the entire package and implement both options offered h
 
 
 ## Installation:
-- Clone or download the repository found here:        https://github.com/pisani/REST-BusinessActivityMonitoring
+- Clone or download/extract the repository https://github.com/pisani/REST-BusinessActivityMonitoring into an empty folder on your system
 - Open an InterSystems IRIS Terminal Window
-- Switch into a Namespacean configured for interoperability.
-- Import the code into your namespace:
--- At the IRIS command-line prompt, execute the following to import the entire package:
+- Switch into a Namespace configured for interoperability.
+- Import the code into your namespace by executing execute the following command, where <yourTempDir> is the folder containing extracted  repository.(Note this imports the entire package) : 
 ```
 do $System.OBJ.LoadDir(<yourTempDir>,”ck”,,1)
 ```
---- Where <yourTempDir> is the folder where downloaded files have been extracted to.
-
-Classes need to be downloaded and imported into your IRIS Namespace
-If using the REST API to retrieve metric values, a WEB Applications needs to be defined in IRIS.
-Follow the instructions in the provided documentation for a step by step setup of the above.  
+Note: this method imports all functionality, including the Sample Production and Sample Metric class. You may remove the classes not required (ex zaux.rBAM.Sample*). Please refer to the Installation section of the included documentation [GitHub Pages](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux.rBAM.OpenExchange.pdf) to identify which classes to retain. 
 
 
 ## Try it out: HTTP Post to push metric data to external sources.
