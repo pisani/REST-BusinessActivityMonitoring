@@ -30,12 +30,12 @@ Note: this method imports all functionality, including the Sample Production and
 
 This example will utilise the provided Sample Production and MetricClass to get going.
 
-### 1:	Import code and setup the sample production.
+1.	Import code and setup the sample production.
 	Once installed, open and view the production zaux.rBAM.Sample.Production. Do not start the production yet.
 	
-### 2:	Setup the Microsoft Power BI Streaming Dataset
+2.	Setup the Microsoft Power BI Streaming Dataset
 
-.	- With your Workspace selected, refer to the top right-hand drop menu + Create,  and select Create -> Streaming Dataset
+	- With your Workspace selected, refer to the top right-hand drop menu + Create,  and select Create -> Streaming Dataset
 	- Select { API }  to define a generic streaming dataset, then click NEXT.
 	- Give your Dataset a name (eg: ‘IRISStreamingDataset’), and add the values:
 
