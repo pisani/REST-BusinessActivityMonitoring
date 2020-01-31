@@ -94,4 +94,4 @@ and pushed to the URL Provided.
 	Below is an illustration of what you should have at the end of this final step:
 	
 	![image](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/images/MSDashboardTileSettings.png)
-	
+	 
