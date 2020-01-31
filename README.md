@@ -50,7 +50,7 @@ This example will utilise the provided Sample Production and MetricClass to get 
 
 	![image](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/images/MSDatasetDefinition.png)
  
-3.	Record Streaming Dataset URL
+3.	Record Streaming Dataset *Push URL*
 	- Once created, Power BI will determine and provide a URL to use to supply data. In this case that will be done by IRIS.
 	- Copy the contents of this long URL.
 
