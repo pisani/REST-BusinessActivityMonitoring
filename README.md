@@ -4,7 +4,7 @@
 This code extends on the Business Activity Monitoring features natively available with InterSystems IRIS’s integration framework. 
 
 [![](https://img.shields.io/badge/InterSystems-IRIS-blue.svg)](https://www.intersystems.com/products/intersystems-iris/)
-[![](https://img.shields.io/badge/InterSystems-IRIS-for-Health-blue.svg)](https://www.intersystems.com/products/intersystems-irishealth/)
+[![](https://img.shields.io/badge/InterSystems-IRISforHealth-blue.svg)](https://www.intersystems.com/products/intersystems-irishealth/)
 
 ## Features:
 * Capture and push (using HTTP POST) business metric values to a nominated REST endpoint. 
