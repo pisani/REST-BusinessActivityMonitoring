@@ -61,7 +61,7 @@ This example will utilise the provided Sample Production and MetricClass to get 
 	Below is an illustration of what you should have at the end of this step:
 	
 	![image](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/images/MSDatasetURL.png)
-	![image](https://github.com/pisani/REST-BusinessActivityMonitoring/tree/master/zaux/documentation/images/MSDatasetURL.png)
+	![image](https://raw.githubusercontent.com/pisani/REST-BusinessActivityMonitoring/tree/master/zaux/documentation/images/MSDatasetURL.png)
 
 4.	Back in the IRIS production, configure the IRIS Business Operation
 	Some zaux.rBAM.Operation settings need to be entered. (Most of the settings that are needed for formattin the JSON body for the Microsoft Streaming Dataset (eg StructuredOutput=0), have already been set for you). (Refer to the [documentation](https://github.com/pisani/REST-BusinessActivityMonitoring/blob/master/zaux/documentation/zaux.rBAM.OpenExchange.pdf) for the meaning of each configurable setting).
