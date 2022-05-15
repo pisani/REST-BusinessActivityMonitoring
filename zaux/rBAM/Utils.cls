@@ -264,20 +264,22 @@ ClassMethod resolveClassName(itemName) As %String
 	quit ""
 }
 
-// Work in progress:
+/*
+/// Work in progress:
+/// smarter way if including/excluding metric parameters
 ClassMethod addRemoveMetricParameters(OutputFormat, pProperties, Output metricProperties As %DynamicObject, attMetric)
 {
 					
 					// $ALL; {p}:RTU; 
-					/*
-						if +
+					;
+					;	if +
 
-						set imp("$ALL")=""
-						set imp("+","AirQuality")="RT"
-						set imp("-","AverageTemp")="U"
+					;	set imp("$ALL")=""
+					;	set imp("+","AirQuality")="RT"
+					;	set imp("-","AverageTemp")="U"
 						
-						RT; -Air*:r;-
-					*/
+					;	RT; -Air*:r;-
+					
 											
 					set p=""
 					for  { 
@@ -316,6 +318,7 @@ ClassMethod addRemoveMetricParameters(OutputFormat, pProperties, Output metricPr
 						do metricProperties.%Push(metricProp)			
 					}
 }
+*/
 
 /// Called after normal compilation of JSON body just before sending result.
 /// pProperties is an array of metric property names and included meta tags.
